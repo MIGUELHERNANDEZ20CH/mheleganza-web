@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Mis Favoritos | MH’Eleganza{% endblock %}
+
+{% block content %}
+<div class="row mb-4 text-center">
+    <div class="col-12">
+        <h1 class="fw-bold" style="color: var(--dorado-claro);">Tus Prendas Favoritas</h1>
+        <p class="text-light opacity-75">Tu lista de deseos guardada en el sistema.</p>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for producto in productos %}
+    <div class="col">
+        <div class="card card-mh h-100 shadow-sm border-secondary position-relative">
+            {% if producto.imagen_url %}
+                <img src="{{ producto.imagen_url }}" class="card-img-top" alt="{{ producto.nombre }}" style="height: 220px; object-fit: cover;">
+            {% endif %}
+            
+            <div class="card-body d-flex flex-column">
+                <span class="badge bg-dark text-warning border border-warning mb-2 align-self-start" style="font-size: 0.75rem;">{{ producto.marca }}</span>
+                <h5 class="card-title fw-bold text-white">{{ producto.nombre }}</h5>
+                <p class="card-text text-light opacity-75 small flex-grow-1">{{ producto.descripcion }}</p>
+                
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <span class="fs-5 fw-bold text-warning">${{ producto.precio }}</span>
+                    <div>
+                        <a href="{% url 'detalle_producto' producto.id %}" class="btn btn-outline-warning btn-sm me-1">Detalles</a>
+                        <form method="POST" action="{% url 'quitar_favorito' producto.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Quitar de favoritos</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <h4 class="text-white mb-3">Aún no tienes productos favoritos</h4>
+        <p class="text-light mb-4">Entra a los detalles de cualquier prenda y haz clic en "Agregar a Favoritos".</p>
+        <a href="{% url 'catalogo' %}" class="btn btn-dorado">Ir al Catálogo</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block body_class %}profile-page{% endblock %}
+{% block content %}
+<div class="row justify-content-center my-5">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow border-0 rounded-4 p-4">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold text-dark">Cambiar Contraseña</h3>
+                <p class="text-muted small">Actualiza tu clave de acceso de forma segura</p>
+            </div>
+
+            {% if mensaje %}
+                <div class="alert alert-success small text-center" role="alert">{{ mensaje }}</div>
+            {% endif %}
+            {% if error %}<div class="alert alert-danger small" role="alert">{{ error }}</div>{% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="password_actual" class="form-label fw-semibold small">Contraseña Actual</label>
+                    <input type="password" class="form-control rounded-pill px-3 py-2" id="password_actual" name="password_actual" placeholder="••••••••" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password_nuevo" class="form-label fw-semibold small">Nueva Contraseña</label>
+                    <input type="password" class="form-control rounded-pill px-3 py-2" id="password_nuevo" name="password_nuevo" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-dark w-100 rounded-pill py-2 fw-semibold shadow-sm mt-2">Guardar Nueva Contraseña</button>
+            </form>
+
+            <div class="text-center mt-4 small">
+                <a href="{% url 'perfil_datos' %}" class="text-secondary text-decoration-none fw-semibold">← Volver al Perfil</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

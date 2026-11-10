@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+
+{% block title %}Actualizar información | MH’ELEGANZA{% endblock %}
+{% block body_class %}profile-page{% endblock %}
+
+{% block content %}
+<style>
+    .profile-edit {
+        --profile-gold: #d4af37;
+        --profile-ink: #080a10;
+        --profile-muted: #a7adba;
+        max-width: 760px;
+        margin-inline: auto;
+        padding: clamp(1.25rem, 4vw, 3rem) 1rem;
+    }
+
+    .profile-edit__card {
+        position: relative;
+        overflow: hidden;
+        padding: clamp(1.5rem, 5vw, 3.25rem);
+        border: 1px solid rgb(212 175 55 / 24%);
+        border-radius: 1.5rem;
+        background:
+            radial-gradient(ellipse at 100% 0%, rgb(212 175 55 / 10%), transparent 42%),
+            linear-gradient(145deg, rgb(24 27 35 / 96%), rgb(10 12 18 / 98%));
+        box-shadow: 0 24px 70px rgb(0 0 0 / 36%), inset 0 1px 0 rgb(255 255 255 / 5%);
+        backdrop-filter: blur(18px);
+    }
+
+    .profile-edit__eyebrow {
+        margin: 0 0 0.75rem;
+        color: var(--profile-gold);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+    }
+
+    .profile-edit__title {
+        margin: 0;
+        color: #fff;
+        font-size: clamp(1.8rem, 5vw, 2.5rem);
+        font-weight: 650;
+        letter-spacing: -0.045em;
+        line-height: 1.15;
+    }
+
+    .profile-edit__intro {
+        max-width: 48ch;
+        margin: 0.85rem 0 2rem;
+        color: var(--profile-muted);
+        font-size: 0.98rem;
+        line-height: 1.7;
+    }
+
+    .profile-edit__fields {
+        display: grid;
+        gap: 1.25rem;
+    }
+
+    .profile-edit__label {
+        display: block;
+        margin-bottom: 0.55rem;
+        color: #f0f1f4;
+        font-size: 0.88rem;
+        font-weight: 600;
+    }
+
+    .profile-edit__input {
+        min-height: 3.25rem;
+        border: 1px solid rgb(255 255 255 / 12%);
+        border-radius: 0.8rem;
+        background-color: rgb(255 255 255 / 4%);
+        color: #fff;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+    }
+
+    .profile-edit__input::placeholder {
+        color: #858b98;
+    }
+
+    .profile-edit__input:focus {
+        border-color: var(--profile-gold);
+        background-color: rgb(255 255 255 / 7%);
+        box-shadow: 0 0 0 0.22rem rgb(212 175 55 / 15%);
+        color: #fff;
+    }
+
+    .profile-edit__input.is-invalid {
+        border-color: #ef7373;
+    }
+
+    .profile-edit__input.is-invalid:focus {
+        box-shadow: 0 0 0 0.22rem rgb(239 115 115 / 15%);
+    }
+
+    .profile-edit__input:-webkit-autofill,
+    .profile-edit__input:-webkit-autofill:hover,
+    .profile-edit__input:-webkit-autofill:focus {
+        -webkit-text-fill-color: #fff;
+        box-shadow: 0 0 0 1000px var(--profile-ink) inset;
+        transition: background-color 9999s ease-out;
+    }
+
+    .profile-edit__actions {
+        display: grid;
+        gap: 0.9rem;
+        margin-top: 2rem;
+    }
+
+    .profile-edit__submit {
+        min-height: 3.25rem;
+        border: 1px solid transparent;
+        border-radius: 0.8rem;
+        background: linear-gradient(120deg, #e4c65a, var(--profile-gold) 55%, #b38b22);
+        color: #17140a;
+        font-weight: 750;
+        letter-spacing: 0.025em;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
+    }
+
+    .profile-edit__submit:hover {
+        filter: brightness(1.08);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgb(212 175 55 / 20%);
+    }
+
+    .profile-edit__submit:focus-visible,
+    .profile-edit__back:focus-visible {
+        outline: 3px solid rgb(212 175 55 / 65%);
+        outline-offset: 3px;
+    }
+
+    .profile-edit__back {
+        justify-self: center;
+        color: #d7d9de;
+        font-size: 0.9rem;
+        font-weight: 550;
+        text-decoration-color: rgb(212 175 55 / 55%);
+        text-underline-offset: 0.25em;
+        transition: color 0.3s ease;
+    }
+
+    .profile-edit__back:hover {
+        color: var(--profile-gold);
+    }
+
+    .profile-edit__error {
+        margin-bottom: 1.5rem;
+        border: 1px solid rgb(239 115 115 / 30%);
+        border-radius: 0.8rem;
+        background: rgb(239 115 115 / 9%);
+        color: #ffd1d1;
+    }
+
+    @media (min-width: 600px) {
+        .profile-edit__fields {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .profile-edit__field--wide {
+            grid-column: 1 / -1;
+        }
+
+        .profile-edit__actions {
+            grid-template-columns: minmax(180px, 1fr) auto;
+            align-items: center;
+        }
+
+        .profile-edit__back {
+            justify-self: end;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .profile-edit__input,
+        .profile-edit__submit,
+        .profile-edit__back {
+            transition: none;
+        }
+    }
+</style>
+
+<section class="profile-edit">
+    <div class="profile-edit__card">
+        <p class="profile-edit__eyebrow">MH’ELEGANZA · Tu perfil</p>
+        <h1 class="profile-edit__title">Actualizar información</h1>
+        <p class="profile-edit__intro">Mantén tus datos al día para que cada detalle de tu experiencia esté a tu medida.</p>
+
+        {% if error %}
+            <div class="alert profile-edit__error" role="alert">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="profile-edit__fields">
+                <div class="profile-edit__field profile-edit__field--wide">
+                    <label class="profile-edit__label" for="nombre">Nombre completo</label>
+                    <input
+                        class="form-control profile-edit__input{% if errores_campos.nombre %} is-invalid{% endif %}"
+                        id="nombre"
+                        name="nombre"
+                        type="text"
+                        value="{{ valores_perfil.nombre }}"
+                        autocomplete="name"
+                        required
+                    >
+                </div>
+                <div class="profile-edit__field">
+                    <label class="profile-edit__label" for="email">Correo electrónico</label>
+                    <input
+                        class="form-control profile-edit__input{% if errores_campos.email %} is-invalid{% endif %}"
+                        id="email"
+                        name="email"
+                        type="email"
+                        value="{{ valores_perfil.email }}"
+                        autocomplete="email"
+                        required
+                    >
+                </div>
+                <div class="profile-edit__field">
+                    <label class="profile-edit__label" for="telefono">Teléfono</label>
+                    <input
+                        class="form-control profile-edit__input{% if errores_campos.telefono %} is-invalid{% endif %}"
+                        id="telefono"
+                        name="telefono"
+                        type="tel"
+                        value="{{ valores_perfil.telefono }}"
+                        autocomplete="tel"
+                        required
+                    >
+                </div>
+            </div>
+
+            <div class="profile-edit__actions">
+                <button type="submit" class="btn profile-edit__submit">Actualizar perfil</button>
+                <a class="profile-edit__back" href="{% url 'perfil_datos' %}">Volver al perfil</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

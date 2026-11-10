@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center my-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow border-0 rounded-4 p-4">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold text-dark">Registrarse</h3>
+                <p class="text-muted small">Únete a la experiencia exclusiva de MH’ELEGANZA</p>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}<div class="alert alert-success small" role="alert">{{ message }}</div>{% endfor %}
+            {% endif %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger small" role="alert">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <div class="alert alert-danger small" id="registro-feedback" role="alert" {% if not campos_incompletos %}hidden{% endif %}>Campos incompletos</div>
+
+            <form method="POST" id="registro-form" novalidate>
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="nombre" class="form-label fw-semibold small">Nombre</label>
+                    <input type="text" class="form-control rounded-pill px-3 py-2 {% if form.nombre.errors %}is-invalid{% endif %}" id="nombre" name="nombre" value="{{ form.nombre.value|default:'' }}" placeholder="Tu nombre" data-server-invalid="{% if form.nombre.errors %}true{% else %}false{% endif %}" required>
+                    {% for error in form.nombre.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label fw-semibold small">Correo electrónico</label>
+                    <input type="email" class="form-control rounded-pill px-3 py-2 {% if form.email.errors %}is-invalid{% endif %}" id="email" name="email" value="{{ form.email.value|default:'' }}" placeholder="tucorreo@ejemplo.com" data-server-invalid="{% if form.email.errors %}true{% else %}false{% endif %}" required>
+                    <div class="invalid-feedback" id="email-feedback">{% for error in form.email.errors %}{{ error }}{% empty %}Correo no válido{% endfor %}</div>
+                </div>
+                <div class="mb-3">
+                    <label for="telefono" class="form-label fw-semibold small">Teléfono</label>
+                    <input type="tel" class="form-control rounded-pill px-3 py-2 {% if form.telefono.errors %}is-invalid{% endif %}" id="telefono" name="telefono" value="{{ form.telefono.value|default:'' }}" placeholder="Tu teléfono" data-server-invalid="{% if form.telefono.errors %}true{% else %}false{% endif %}" required>
+                    {% for error in form.telefono.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="mb-3">
+                    <label for="direccion" class="form-label fw-semibold small">Dirección</label>
+                    <textarea class="form-control rounded-4 px-3 py-2 {% if form.direccion.errors %}is-invalid{% endif %}" id="direccion" name="direccion" placeholder="Dirección de envío" rows="2">{{ form.direccion.value|default:'' }}</textarea>
+                    {% for error in form.direccion.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label fw-semibold small">Contraseña</label>
+                    <input type="password" class="form-control rounded-pill px-3 py-2 {% if form.password.errors %}is-invalid{% endif %}" id="password" name="password" placeholder="Contraseña" data-server-invalid="{% if form.password.errors %}true{% else %}false{% endif %}" required aria-describedby="password-feedback">
+                    <div class="invalid-feedback" id="password-feedback">{% for error in form.password.errors %}{{ error }}{% empty %}La contraseña debe tener mínimo 8 caracteres e incluir mayúscula, minúscula, número y carácter especial{% endfor %}</div>
+                </div>
+                <button type="submit" id="registro-submit" class="btn btn-dark w-100 rounded-pill py-2 fw-semibold shadow-sm mt-2">Registrarse</button>
+            </form>
+
+            <script>
+                const registroForm = document.getElementById('registro-form');
+                const emailInput = document.getElementById('email');
+                const passwordInput = document.getElementById('password');
+                const passwordFeedback = document.getElementById('password-feedback');
+                const submitButton = document.getElementById('registro-submit');
+                const incompleteFeedback = document.getElementById('registro-feedback');
+                const requiredInputs = [...registroForm.querySelectorAll('[required]')];
+                let hasInteracted = false;
+
+                function validateRegistration() {
+                    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value);
+                    const passwordValid = passwordInput.value.length >= 8 && /[A-Z]/.test(passwordInput.value) && /[a-z]/.test(passwordInput.value) && /[0-9]/.test(passwordInput.value) && /[\W_]/.test(passwordInput.value);
+                    const missingInputs = requiredInputs.filter(input => !input.value.trim());
+                    const hasServerErrors = requiredInputs.some(input => input.dataset.serverInvalid === 'true');
+                    let passwordError = '';
+                    if (passwordInput.value.length > 0) {
+                        if (passwordInput.value.length < 8) passwordError = 'La contraseña debe tener mínimo 8 caracteres';
+                        else if (!/[A-Z]/.test(passwordInput.value)) passwordError = 'La contraseña debe incluir una letra mayúscula';
+                        else if (!/[a-z]/.test(passwordInput.value)) passwordError = 'La contraseña debe incluir una letra minúscula';
+                        else if (!/[0-9]/.test(passwordInput.value)) passwordError = 'La contraseña debe incluir un número';
+                        else if (!/[\W_]/.test(passwordInput.value)) passwordError = 'La contraseña debe incluir un carácter especial';
+                    }
+                    requiredInputs.forEach(input => input.classList.toggle('is-invalid', input.dataset.serverInvalid === 'true' || (hasInteracted && !input.value.trim())));
+                    emailInput.classList.toggle('is-invalid', emailInput.dataset.serverInvalid === 'true' || (emailInput.value.length > 0 && !emailValid) || (hasInteracted && !emailInput.value.trim()));
+                    passwordInput.classList.toggle('is-invalid', passwordInput.dataset.serverInvalid === 'true' || (passwordInput.value.length > 0 && !passwordValid) || (hasInteracted && !passwordInput.value.trim()));
+                    passwordFeedback.textContent = passwordError || 'La contraseña debe tener mínimo 8 caracteres e incluir mayúscula, minúscula, número y carácter especial';
+                    incompleteFeedback.hidden = !hasInteracted || missingInputs.length === 0;
+                    submitButton.disabled = missingInputs.length > 0 || !emailValid || !passwordValid || hasServerErrors;
+                }
+
+                registroForm.addEventListener('input', event => {
+                    hasInteracted = true;
+                    event.target.dataset.serverInvalid = 'false';
+                    validateRegistration();
+                });
+                registroForm.addEventListener('submit', () => {
+                    hasInteracted = true;
+                    validateRegistration();
+                });
+                validateRegistration();
+            </script>
+
+            <div class="text-center mt-4 small">
+                <p class="text-muted">¿Ya tienes una cuenta? <a href="{% url 'login' %}" class="text-dark fw-bold text-decoration-none">Iniciar sesión</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

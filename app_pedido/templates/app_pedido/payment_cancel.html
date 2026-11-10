@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Pago cancelado | MH’ELEGANZA{% endblock %}
+{% block content %}
+<main class="container py-5">
+    <div class="mx-auto card shadow border-0 rounded-4 p-4 p-md-5 text-center" style="max-width: 720px;">
+        <h1 class="h3 fw-bold">Pago cancelado</h1>
+        <p>Tu carrito sigue disponible y no se realizó ningún cobro confirmado.</p>
+        <a class="btn btn-dark rounded-pill px-4" href="{% url 'checkout' %}">Volver al pago</a>
+    </div>
+</main>
+{% endblock %}

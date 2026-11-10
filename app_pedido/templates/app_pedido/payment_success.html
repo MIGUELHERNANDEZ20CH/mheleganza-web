@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Pago recibido | MH’ELEGANZA{% endblock %}
+{% block content %}
+<main class="container py-5">
+    <div class="mx-auto card shadow border-0 rounded-4 p-4 p-md-5 text-center" style="max-width: 720px;">
+        {% if pedido.estado == 'PAGADO' %}
+            <h1 class="h3 fw-bold">¡Pago confirmado!</h1>
+            <p class="mb-1">Tu pedido #{{ pedido.pk }} está pagado.</p>
+            <p class="text-muted">Te enviamos la confirmación a tu correo.</p>
+            <a class="btn btn-dark rounded-pill px-4" href="{% url 'detalle_pedido' pedido.pk %}">Ver pedido</a>
+        {% else %}
+            <h1 class="h3 fw-bold">Estamos confirmando tu pago</h1>
+            <p>El pedido #{{ pedido.pk }} sigue pendiente. Actualiza esta página en unos instantes.</p>
+            <a class="btn btn-outline-dark rounded-pill px-4" href="{% url 'mis_pedidos' %}">Ver mis pedidos</a>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}

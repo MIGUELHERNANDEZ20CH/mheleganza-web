@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ producto.nombre }} | MH'ELEGANZA{% endblock %}
+
+{% block extra_css %}
+<style>
+  .product-detail {
+    --detail-bg: #080b10;
+    --detail-panel: #10151d;
+    --detail-border: rgba(212, 175, 55, .22);
+    --detail-gold: #d4af37;
+    --detail-muted: #a0aec0;
+    color: #fff;
+    padding: clamp(2rem, 5vw, 4.5rem) 1rem;
+  }
+
+  .product-detail__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  .product-gallery {
+    min-width: 0;
+  }
+
+  .product-gallery__radio,
+  .size-option__radio {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  .product-gallery__stage {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4 / 5;
+    border: 1px solid var(--detail-border);
+    border-radius: 1rem;
+    background: var(--detail-panel);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .35);
+  }
+
+  .product-gallery__slide {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    transform: scale(1.015);
+    transition: opacity .3s ease, transform .3s ease;
+    pointer-events: none;
+  }
+
+  .product-gallery__slide:has(.product-gallery__radio:checked) {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+
+  .product-gallery__slide:has(.product-gallery__radio:focus-visible) {
+    outline: 2px solid #fff;
+    outline-offset: -4px;
+  }
+
+  .product-gallery__slide img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .product-gallery__thumbnails {
+    display: flex;
+    gap: .75rem;
+    overflow-x: auto;
+    padding: .9rem .1rem .25rem;
+  }
+
+  .product-gallery__thumbnail {
+    flex: 0 0 4.5rem;
+    height: 5.25rem;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: .6rem;
+    cursor: pointer;
+    opacity: .7;
+    transition: opacity .3s ease, border-color .3s ease, transform .3s ease;
+  }
+
+  .product-gallery__thumbnail:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+
+  .product-gallery__thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .product-detail__info {
+    align-self: center;
+  }
+
+  .product-detail__eyebrow {
+    margin: 0 0 .75rem;
+    color: var(--detail-gold);
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+  }
+
+  .product-detail__title {
+    margin: 0;
+    color: #fff;
+    font-size: clamp(2rem, 4vw, 3.25rem);
+    font-weight: 700;
+    letter-spacing: .045em;
+    line-height: 1.08;
+    text-transform: uppercase;
+  }
+
+  .product-detail__price {
+    margin: 1.25rem 0;
+    color: var(--detail-gold);
+    font-size: 1.65rem;
+    font-weight: 700;
+  }
+
+  .product-detail__description {
+    margin: 0;
+    color: #d1d5db;
+    font-size: 1rem;
+    line-height: 1.75;
+  }
+
+  .product-detail__stock {
+    margin: 1.25rem 0 0;
+    color: var(--detail-muted);
+    font-size: .9rem;
+  }
+
+  .product-detail__section-title {
+    display: block;
+    margin: 1.75rem 0 .7rem;
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .size-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .65rem;
+  }
+
+  .size-option__label {
+    display: inline-flex;
+    min-width: 3.4rem;
+    min-height: 3rem;
+    align-items: center;
+    justify-content: center;
+    padding: .55rem .8rem;
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: .5rem;
+    color: #e5e7eb;
+    cursor: pointer;
+    transition: color .3s ease, background .3s ease, border-color .3s ease, box-shadow .3s ease;
+  }
+
+  .size-option__label:hover {
+    border-color: var(--detail-gold);
+  }
+
+  .size-option__radio:checked + .size-option__label {
+    border-color: var(--detail-gold);
+    background: rgba(212, 175, 55, .14);
+    color: var(--detail-gold);
+    box-shadow: 0 0 0 1px var(--detail-gold);
+  }
+
+  .size-option__radio:focus-visible + .size-option__label {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+  }
+
+  .size-option__stock {
+    display: block;
+    margin-top: .15rem;
+    color: var(--detail-muted);
+    font-size: .65rem;
+    text-align: center;
+  }
+
+  .product-detail__quantity {
+    width: 6rem;
+    min-height: 3rem;
+    padding: .5rem .75rem;
+    border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: .5rem;
+    background: var(--detail-panel);
+    color: #fff;
+    font: inherit;
+  }
+
+  .product-detail__submit {
+    display: inline-flex;
+    min-height: 3.25rem;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1.5rem;
+    padding: .85rem 1.5rem;
+    border: 1px solid var(--detail-gold);
+    border-radius: .55rem;
+    background: linear-gradient(135deg, #f3c969, #d4af37);
+    color: #111;
+    font: inherit;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-decoration: none;
+    cursor: pointer;
+    transition: filter .3s ease, transform .3s ease, box-shadow .3s ease;
+  }
+
+  .product-detail__submit:hover {
+    filter: brightness(1.08);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(212, 175, 55, .2);
+  }
+
+  .product-detail__submit:disabled {
+    cursor: not-allowed;
+    filter: grayscale(.8);
+    opacity: .55;
+    transform: none;
+  }
+
+  .product-detail__unavailable {
+    margin-top: 1rem;
+    color: #fca5a5;
+  }
+
+  @media (max-width: 760px) {
+    .product-detail__layout {
+      grid-template-columns: 1fr;
+      gap: 1.75rem;
+    }
+
+    .product-gallery__stage {
+      aspect-ratio: 1 / 1;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="product-detail">
+  {% if producto %}
+  <div class="product-detail__layout">
+    <section class="product-gallery" aria-label="Galería de {{ producto.nombre }}">
+      <div class="product-gallery__stage">
+        {% for imagen in producto.imagenes %}
+          <figure class="product-gallery__slide">
+            <input
+              class="product-gallery__radio"
+              type="radio"
+              name="imagen-galeria"
+              id="gallery-image-{{ forloop.counter }}"
+              {% if forloop.first %}checked{% endif %}
+              aria-label="Ver imagen {{ forloop.counter }}"
+            >
+            <img src="{{ imagen.url }}" alt="{{ producto.nombre }} - imagen {{ forloop.counter }}" {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+          </figure>
+        {% empty %}
+          {% if producto.imagen_url %}
+            <figure class="product-gallery__slide" style="opacity: 1; transform: none;">
+              <input class="product-gallery__radio" type="radio" name="imagen-galeria" checked aria-label="Imagen del producto">
+              <img src="{{ producto.imagen_url }}" alt="{{ producto.nombre }}" fetchpriority="high">
+            </figure>
+          {% elif producto.imagen %}
+            <figure class="product-gallery__slide" style="opacity: 1; transform: none;">
+              <input class="product-gallery__radio" type="radio" name="imagen-galeria" checked aria-label="Imagen del producto">
+              <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" fetchpriority="high">
+            </figure>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      {% if producto.imagenes|length > 1 %}
+        <div class="product-gallery__thumbnails" aria-label="Elegir imagen">
+          {% for imagen in producto.imagenes %}
+            <label class="product-gallery__thumbnail" for="gallery-image-{{ forloop.counter }}" aria-label="Ver imagen {{ forloop.counter }}">
+              <img src="{{ imagen.url }}" alt="" loading="lazy">
+            </label>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="product-detail__info">
+      <p class="product-detail__eyebrow">{{ producto.marca }}</p>
+      <h1 class="product-detail__title">{{ producto.nombre }}</h1>
+      <p class="product-detail__price">${{ producto.precio }}</p>
+      <p class="product-detail__description">{{ producto.descripcion|default:"Diseño distinguido y calidad premium para acompañar tu estilo." }}</p>
+      <p class="product-detail__stock">Disponibles: {{ producto.stock }} unidades</p>
+
+      {% if producto.stock > 0 and tallas_disponibles %}
+        <form method="post" action="{% url 'agregar_carrito' producto.id %}">
+          {% csrf_token %}
+          <fieldset style="border: 0; margin: 0; padding: 0;">
+            <legend class="product-detail__section-title">Selecciona tu talla</legend>
+            <div class="size-options">
+              {% for variante in tallas_disponibles %}
+                <div>
+                  <input
+                    class="size-option__radio"
+                    type="radio"
+                    name="variante_id"
+                    id="size-{{ variante.id|default:forloop.counter }}"
+                    value="{{ variante.id }}"
+                    {% if forloop.first %}checked{% endif %}
+                    required
+                  >
+                  <label class="size-option__label" for="size-{{ variante.id|default:forloop.counter }}">
+                    <span>{{ variante.talla }}<small class="size-option__stock">{{ variante.stock }} disp.</small></span>
+                  </label>
+                </div>
+              {% endfor %}
+            </div>
+          </fieldset>
+
+          <label class="product-detail__section-title" for="product-quantity">Cantidad</label>
+          <input
+            class="product-detail__quantity"
+            id="product-quantity"
+            type="number"
+            name="cantidad"
+            value="1"
+            min="1"
+            max="{{ producto.stock }}"
+            inputmode="numeric"
+            required
+          >
+          <br>
+          <button class="product-detail__submit" type="submit">Añadir al carrito</button>
+        </form>
+      {% else %}
+        <p class="product-detail__unavailable" role="status">Producto no disponible</p>
+        <button class="product-detail__submit" type="button" disabled>Añadir al carrito</button>
+      {% endif %}
+    </section>
+  </div>
+  {% else %}
+    <div class="product-detail__layout">
+      <section class="product-detail__info" role="status">
+        <h1 class="product-detail__title">Producto no disponible</h1>
+        <p class="product-detail__description">Este artículo ya no está disponible en la tienda.</p>
+        <a class="product-detail__submit" href="{% url 'catalogo' %}">Volver al catálogo</a>
+      </section>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0 rounded-4 p-4">
+                <h3 class="fw-bold text-dark mb-3">Finalizar Compra y Pago</h3>
+                <p class="text-muted small mb-4">Selecciona tu medio de pago y confirma tu dirección de envío.</p>
+
+                {% if error_pago %}
+                    <div class="alert alert-danger small" role="alert">{{ error_pago }}</div>
+                {% endif %}
+                {% if messages %}{% for message in messages %}<div class="alert alert-warning small" role="alert">{{ message }}</div>{% endfor %}{% endif %}
+
+                <h4 class="fw-bold text-dark mb-3">Resumen del pedido</h4>
+                <div class="table-responsive mb-4">
+                    <table class="table align-middle">
+                        <thead><tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th></tr></thead>
+                        <tbody>{% for item in lineas_carrito %}<tr><td>{{ item.nombre }}</td><td>{{ item.cantidad }}</td><td>${{ item.precio|floatformat:0 }}</td><td>${{ item.subtotal|floatformat:0 }}</td></tr>{% endfor %}</tbody>
+                    </table>
+                </div>
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="direccion" class="form-label fw-semibold small">Dirección de Envío Completa</label>
+                        <textarea class="form-control rounded-4 px-3 py-2{% if error_direccion %} is-invalid{% endif %}" id="direccion" name="direccion" rows="2" placeholder="Ej: Calle 10 # 5-20, Florencia Caquetá" required aria-invalid="{% if error_direccion %}true{% else %}false{% endif %}">{{ direccion_actual }}</textarea>
+                        {% if error_direccion %}<div class="invalid-feedback">Ingresa la dirección de envío.</div>{% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small">Seleccione Medio de Pago</label>
+                        <select id="metodo_pago" name="metodo_pago" class="form-select rounded-pill px-3 py-2{% if error_metodo_pago %} is-invalid{% endif %}" required aria-invalid="{% if error_metodo_pago %}true{% else %}false{% endif %}">
+                            <option value="" {% if not metodo_pago_actual %}selected{% endif %}>Seleccione una opción...</option>
+                            <option value="TARJETA" {% if metodo_pago_actual == 'TARJETA' %}selected{% endif %}>Tarjeta de Crédito o Débito (Stripe Checkout)</option>
+                            <option value="EFECTIVO" {% if metodo_pago_actual == 'EFECTIVO' %}selected{% endif %}>Efectivo</option>
+                            <option value="TRANSFERENCIA" {% if metodo_pago_actual == 'TRANSFERENCIA' %}selected{% endif %}>Transferencia Bancaria</option>
+                            <option value="CONTRAENTREGA" {% if metodo_pago_actual == 'CONTRAENTREGA' %}selected{% endif %}>Pago Contraentrega</option>
+                        </select>
+                        {% if error_metodo_pago %}<div class="invalid-feedback">Selecciona un medio de pago válido.</div>{% endif %}
+                    </div>
+
+                    <div class="bg-light p-3 rounded-4 mb-4">
+                        <div class="d-flex justify-content-between fw-bold text-dark">
+                            <span>Total a cancelar:</span>
+                            <span class="fs-5">${{ subtotal|floatformat:0 }}</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-dark w-100 rounded-pill py-2 fw-semibold shadow-sm">Pagar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

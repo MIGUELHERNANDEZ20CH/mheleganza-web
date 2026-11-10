@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MH’ELEGANZA | High-End Fashion{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- Google Fonts: editorial serif, bold headlines and clean body text -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-lux: #080808;
+            --surface-lux: #121212;
+            --surface-card: #181818;
+            --border-lux: rgba(197, 160, 89, 0.25);
+            --gold-primary: #C5A059;
+            --gold-light: #E2C98E;
+            --gold-dark: #9A7B38;
+            --gold-contrast: #D4AF37;
+            --gold-heading: #E5C158;
+            --blue-night: #0e1424;
+            --text-main: #f4f4f4;
+            --text-muted: #a0a0a0;
+            --dorado-claro: #E5C158;
+        }
+
+        body {
+            background-color: var(--bg-lux);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.3px;
+        }
+
+        /* Estilo de alta gama para Títulos y Marca */
+        .brand-title {
+            font-family: 'Cormorant Garamond', serif;
+            letter-spacing: 2.5px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 30%, var(--gold-primary) 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Navbar Exclusiva */
+        .navbar-lux {
+            background-color: rgba(8, 11, 16, 0.82) !important;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border-lux);
+            padding: 1rem 0;
+        }
+
+        .announcement-bar {
+            padding: 0.55rem 1rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            background: #080b10;
+            color: var(--gold-light);
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .nav-link {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted) !important;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--gold-primary) !important;
+        }
+
+        /* Botones Estilo Lujo */
+        .btn-lux-gold {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            color: #080808;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1.5px;
+            border: none;
+            padding: 0.6rem 1.4rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-lux-gold:hover {
+            background: linear-gradient(135deg, var(--gold-light), var(--gold-primary));
+            color: #000;
+            box-shadow: 0 4px 20px rgba(197, 160, 89, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline-lux {
+            border: 1px solid var(--border-lux);
+            color: var(--gold-primary);
+            background: transparent;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1.5px;
+            padding: 0.5rem 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-lux:hover {
+            border-color: var(--gold-primary);
+            background-color: rgba(197, 160, 89, 0.1);
+            color: var(--gold-light);
+        }
+
+        /* Tarjetas con acabado sutil */
+        .card-lux {
+            background-color: var(--surface-card);
+            border: 1px solid var(--border-lux);
+            border-radius: 0px; /* Bordes rectos minimalistas tipo alta costura */
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card-lux:hover {
+            border-color: var(--gold-primary);
+            transform: translateY(-3px);
+        }
+
+        /* Footer refinado */
+        footer {
+            background-color: var(--surface-lux);
+            border-top: 1px solid var(--border-lux);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        body.cart-page,
+        body.profile-page,
+        body.orders-page {
+            background-color: #121212;
+            color: #fff;
+        }
+
+        .cart-page h1,
+        .cart-page h2,
+        .cart-page h3,
+        .cart-page h4,
+        .profile-page h1,
+        .profile-page h2,
+        .profile-page h3,
+        .profile-page h4,
+        .orders-page h1,
+        .orders-page h2,
+        .orders-page h3,
+        .orders-page h4 {
+            color: var(--gold-heading);
+        }
+
+        .cart-page .card-mh,
+        .profile-page .card-mh,
+        .profile-page .card:not(.profile-edit__card),
+        .orders-page .card {
+            border: 1px solid rgb(212 175 55 / 30%);
+            background-color: #1e1e1e;
+            color: #fff;
+        }
+
+        .cart-page .table {
+            --bs-table-bg: #1e1e1e;
+            --bs-table-color: #fff;
+            --bs-table-border-color: rgb(229 193 88 / 18%);
+            color: #fff;
+        }
+
+        .orders-page .table {
+            --bs-table-bg: #1e1e1e;
+            --bs-table-color: #fff;
+            --bs-table-border-color: rgb(229 193 88 / 18%);
+            color: #fff;
+        }
+
+        .orders-page .table-light {
+            --bs-table-bg: #242424;
+            --bs-table-color: var(--gold-heading);
+        }
+
+        .orders-page .bg-white,
+        .orders-page .bg-light {
+            background-color: #1e1e1e !important;
+            color: #fff !important;
+        }
+
+        .cart-page .table thead th,
+        .orders-page .table thead th,
+        .cart-page .form-label,
+        .profile-page .form-label {
+            color: var(--gold-heading);
+        }
+
+        .cart-page .card-mh .text-muted,
+        .profile-page .card-mh .text-muted,
+        .profile-page .card .text-muted {
+            color: #c5c5c5 !important;
+        }
+
+        .cart-page .text-white,
+        .profile-page .text-white,
+        .orders-page .text-white {
+            color: #fff !important;
+        }
+
+        .cart-page .text-warning,
+        .profile-page .text-warning,
+        .orders-page .text-warning {
+            color: var(--gold-heading) !important;
+        }
+
+        .cart-page .btn-dorado,
+        .profile-page .btn-dorado,
+        .profile-page .btn-dark,
+        .orders-page .btn-dark {
+            border: 1px solid var(--gold-contrast);
+            background-color: var(--gold-contrast);
+            color: #17140a;
+            font-weight: 700;
+        }
+
+        .cart-page .btn-dorado:hover,
+        .profile-page .btn-dorado:hover,
+        .profile-page .btn-dark:hover,
+        .orders-page .btn-dark:hover {
+            border-color: var(--gold-heading);
+            background-color: var(--gold-heading);
+            color: #111;
+        }
+
+        .orders-page .text-dark {
+            color: #fff !important;
+        }
+
+        .orders-page .text-secondary {
+            color: #c5c5c5 !important;
+        }
+
+        .orders-page .btn-outline-dark {
+            border-color: var(--gold-contrast);
+            color: var(--gold-heading);
+        }
+
+        .orders-page .btn-outline-dark:hover {
+            background-color: var(--gold-contrast);
+            color: #17140a;
+        }
+
+        .profile-page .form-control,
+        .profile-page .form-select {
+            border: 1px solid #5b5542;
+            background-color: #181818;
+            color: #fff;
+        }
+
+        .profile-page .form-control::placeholder,
+        .profile-page .form-select::placeholder {
+            color: #b8b8b8;
+        }
+
+        .profile-page .form-control:focus,
+        .profile-page .form-select:focus {
+            border-color: var(--gold-contrast);
+            background-color: #181818;
+            box-shadow: 0 0 0 0.2rem rgb(212 175 55 / 22%);
+            color: #fff;
+        }
+
+        .profile-page .form-control:-webkit-autofill,
+        .profile-page .form-control:-webkit-autofill:hover,
+        .profile-page .form-control:-webkit-autofill:focus {
+            -webkit-text-fill-color: #fff;
+            box-shadow: 0 0 0 1000px #181818 inset;
+        }
+
+        .profile-page .card-mh > div > label {
+            color: var(--gold-heading) !important;
+        }
+
+        .profile-page .text-secondary {
+            color: #d0d0d0 !important;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+    <div class="announcement-bar">MH’ELEGANZA &nbsp;·&nbsp; Distinción con propósito</div>
+
+    <!-- Barra de Navegación Estilo Boutiques Italianas -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-lux sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fs-3 brand-title" href="{% url 'catalogo' %}">MH’ELEGANZA</a>
+            
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center gap-3">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'catalogo' %}">Colección</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="{% url 'ver_favoritos' %}">favoritos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'mis_pedidos' %}">Pedidos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'perfil_datos' %}">Cuenta</a>
+                    </li>
+                    {% if request.session.usuario.rol == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'admin_productos' %}">Administración</a>
+                    </li>
+                    {% endif %}
+
+                    <!-- BLOQUE DINÁMICO DE SESIÓN -->
+                    {% if request.session.usuario %}
+                        <li class="nav-item">
+                            <form method="POST" action="{% url 'cerrar_sesion' %}">{% csrf_token %}<button type="submit" class="nav-link text-danger fw-semibold border-0 bg-transparent">Cerrar sesión</button></form>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link text-light" href="{% url 'login' %}">Acceso</a>
+                        </li>
+                    {% endif %}
+                    <!-- FIN BLOQUE DINÁMICO -->
+
+                    <li class="nav-item ms-lg-2">
+                        <a href="{% url 'ver_carrito' %}" class="btn btn-outline-lux position-relative btn-sm px-3 py-2">
+                            <i class="bi bi-bag me-1"></i> Carrito
+                            {% if total_items > 0 %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color: var(--gold-primary); color: #000; font-weight: 700;">
+                                    {{ total_items }}
+                                </span>
+                            {% endif %} 
+                            {% if total_items > 0 %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color: var(--gold-primary); color: #000; font-weight: 700;">
+                                    {{ total_items }}
+                                </span>
+                            {% endif %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <main class="container my-5 py-3">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Footer Exclusivo -->
+    <footer class="text-center py-5 mt-5">
+        <div class="container">
+            <h5 class="brand-title fs-4 mb-3">MH’ELEGANZA</h5>
+            <p class="text-uppercase tracking-widest text-muted small mb-3">Milano • Florencia • High-End Original Fashion</p>
+            <p class="text-secondary small">&copy; 2026 MH’ELEGANZA. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

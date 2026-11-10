@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Datos Personales | MH’Eleganza{% endblock %}
+{% block body_class %}profile-page{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card card-mh p-4 shadow-sm">
+            {% if messages %}{% for message in messages %}<div class="alert alert-success" role="alert">{{ message }}</div>{% endfor %}{% endif %}
+            <h3 class="fw-bold mb-3" style="color: var(--dorado-claro);">Datos Personales</h3>
+            <hr class="border-warning opacity-25">
+            
+            <div class="mb-3">
+                <label class="fw-semibold small" style="color: #adb5bd;">Nombre de Usuario:</label>
+                <p class="fs-5 fw-semibold text-white">{{ usuario.nombre }}</p>
+            </div>
+            
+            <div class="mb-3">
+                <label class="fw-semibold small" style="color: #adb5bd;">Rol en el Sistema:</label>
+                <p class="fs-5 fw-semibold text-white text-capitalize">{{ usuario.rol }}</p>
+            </div>
+            <div class="mb-3"><label class="fw-semibold small" style="color: #adb5bd;">Correo electrónico:</label><p class="fs-5 fw-semibold text-white">{{ cuenta.email }}</p></div>
+            <div class="mb-3"><label class="fw-semibold small" style="color: #adb5bd;">Teléfono:</label><p class="fs-5 fw-semibold text-white">{{ perfil.telefono }}</p></div>
+
+            <div class="mb-3">
+                <label class="fw-semibold small" style="color: #adb5bd;">Dirección de Envío Registrada:</label>
+                <p class="fs-5 fw-semibold text-warning">
+                    {% if request.session.direccion_usuario %}
+                        {{ request.session.direccion_usuario }}
+                    {% else %}
+                        No registrada todavía. Actualiza tu dirección en el botón de abajo.
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+                <a href="{% url 'actualizar_perfil' %}" class="btn btn-dorado">Actualizar información</a>
+                <a href="{% url 'actualizar_direccion' %}" class="btn btn-dorado">Actualizar Dirección</a>
+                <a href="{% url 'actualizar_contrasena' %}" class="btn btn-outline-warning">Cambiar Contraseña</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
