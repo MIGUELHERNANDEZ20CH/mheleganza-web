@@ -29,10 +29,9 @@ if not SECRET_KEY:
         raise ImproperlyConfigured('DJANGO_SECRET_KEY must be configured when DEBUG is disabled.')
 
 # ==========================================
-# CONFIGURACIÓN DE HOSTS (Adaptado para PythonAnywhere)
+# CONFIGURACIÓN DE HOSTS (PythonAnywhere)
 # ==========================================
-# REEMPLAZA 'tuusuario' por tu nombre de usuario real en PythonAnywhere
-PYTHONANYWHERE_HOST = 'tuusuario.pythonanywhere.com'
+PYTHONANYWHERE_HOST = 'mheleganza.pythonanywhere.com'
 
 development_hosts = (
     ['localhost', '127.0.0.1', 'testserver', '.devtunnels.ms', '.githubpreview.dev']
@@ -44,7 +43,7 @@ configured_hosts = [
     for host in os.getenv('DJANGO_ALLOWED_HOSTS', '').split(',')
     if host.strip()
 ]
-ALLOWED_HOSTS = list(dict.fromkeys([*development_hosts, *configured_hosts, PYTHONANYWHERE_HOST]))
+ALLOWED_HOSTS = list(dict.fromkeys([*development_hosts, *configured_hosts, PYTHONANYWHERE_HOST, '*']))
 
 development_csrf_origins = (
     [
@@ -71,15 +70,10 @@ if not DEBUG and not IS_TESTING and not ALLOWED_HOSTS:
     raise ImproperlyConfigured('DJANGO_ALLOWED_HOSTS must contain the production host names.')
 
 if not DEBUG and not IS_TESTING and not os.getenv('DATABASE_URL'):
-    # Permite SQLite por defecto si no hay DATABASE_URL configurada
     pass
 
-# Se relaja la restricción de SQLite para permitir el despliegue gratuito inicial
-# if not DEBUG and not IS_TESTING and os.getenv('DATABASE_URL', '').startswith('sqlite'):
-#     raise ImproperlyConfigured('SQLite is not supported as a production database.')
-
 if not DEBUG and not IS_TESTING and not os.getenv('EMAIL_HOST'):
-    pass  # Relajado temporalmente para pruebas iniciales
+    pass
 
 if (
     not DEBUG
@@ -88,7 +82,7 @@ if (
 ):
     raise ImproperlyConfigured('Configure both EMAIL_HOST_USER and EMAIL_HOST_PASSWORD, or neither.')
 
-# Aplicaciones instaladas con los nombres exactos provistos
+# Aplicaciones instaladas
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -222,9 +216,6 @@ TWILIO_DEFAULT_COUNTRY_CODE = os.getenv('TWILIO_DEFAULT_COUNTRY_CODE', '57')
 SMS_OTP_TTL_SECONDS = int(os.getenv('SMS_OTP_TTL_SECONDS', '600'))
 SMS_OTP_RESEND_SECONDS = int(os.getenv('SMS_OTP_RESEND_SECONDS', '60'))
 SMS_OTP_MAX_ATTEMPTS = int(os.getenv('SMS_OTP_MAX_ATTEMPTS', '5'))
-
-if not DEBUG and not IS_TESTING:
-    pass
 
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
