@@ -76,9 +76,15 @@ class StripeCheckoutTests(TestCase):
         STRIPE_CURRENCY='cop',
         EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
     )
+    @patch('app_pedido.webhooks.enviar_alerta_nuevo_pedido')
     @patch('app_pedido.webhooks.enviar_confirmacion_pedido')
     @patch('app_pedido.webhooks.stripe.Webhook.construct_event')
-    def test_paid_webhook_is_idempotent_for_inventory(self, construct_event, send_confirmation):
+    def test_paid_webhook_is_idempotent_for_inventory(
+        self,
+        construct_event,
+        send_confirmation,
+        send_admin_alert,
+    ):
         order = Pedido.objects.create(
             cliente=self.user,
             metodo_pago='TARJETA',
@@ -121,6 +127,7 @@ class StripeCheckoutTests(TestCase):
         self.assertEqual(order.stripe_payment_intent_id, 'pi_test_payment')
         self.assertEqual(self.inventory.stock_actual, 1)
         self.assertEqual(MovimientoInventario.objects.filter(tipo='VENTA').count(), 1)
+        send_admin_alert.assert_called_once_with(str(order.pk))
 
     @override_settings(
         STRIPE_SECRET_KEY='sk_test_key',

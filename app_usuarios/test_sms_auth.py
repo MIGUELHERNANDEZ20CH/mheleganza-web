@@ -14,9 +14,9 @@ class SmsPasswordResetTests(TestCase):
             email='sms@example.com',
             password='SecurePass_123!',
         )
-        self.profile = PerfilCliente.objects.create(
+        self.profile, _ = PerfilCliente.objects.update_or_create(
             usuario=self.user,
-            telefono='3005550101',
+            defaults={'telefono': '3005550101'},
         )
 
     @override_settings(

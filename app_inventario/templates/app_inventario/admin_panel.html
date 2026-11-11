@@ -1,37 +1,176 @@
 {% extends 'base.html' %}
+
 {% block content %}
-<div class="container my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4"><h2 class="fw-bold text-dark">Inventario</h2><a href="{% url 'admin_productos' %}" class="btn btn-outline-dark">Gestión de productos y pedidos</a></div>
-    {% if messages %}{% for message in messages %}<div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'warning' %}alert-warning{% else %}alert-success{% endif %}" role="alert">{{ message }}</div>{% endfor %}{% endif %}
-    {% if agotados %}<div class="alert alert-danger" role="alert"><strong>Stock agotado:</strong> {% for inv in agotados %}{{ inv.producto.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}
-    {% if notificaciones %}<section class="mb-4"><h3 class="h5">Notificaciones de inventario</h3>{% for alerta in notificaciones %}<div class="alert alert-warning" role="status">{{ alerta.mensaje }} <time class="small">{{ alerta.creada_en|date:"Y-m-d H:i" }}</time></div>{% endfor %}</section>{% endif %}
-    {% if stock_bajo %}<div class="alert alert-warning" role="alert"><strong>Stock bajo:</strong> {% for inv in stock_bajo %}{{ inv.producto.nombre }} ({{ inv.stock_actual }}){% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}
-    <div class="table-responsive">
-        <table class="table table-striped align-middle">
-            <thead><tr><th>Producto</th><th>Stock actual</th><th>Estado</th><th>Registrar entrada</th><th>Registrar salida</th></tr></thead>
-            <tbody>
-                {% for inventario in inventarios %}
-                <tr>
-                    <td>{{ inventario.producto.nombre }}</td>
-                    <td>
-                        {{ inventario.stock_actual }}
-                        {% for variante in inventario.producto.variantes.all %}
-                            <small class="d-block text-muted">{{ variante.talla }}: {{ variante.stock }}</small>
-                        {% endfor %}
-                    </td>
-                    <td>{% if inventario.stock_actual == 0 %}<span class="badge bg-danger">Agotado</span>{% elif inventario.stock_actual <= inventario.stock_minimo %}<span class="badge bg-warning text-dark">Stock bajo</span>{% else %}<span class="badge bg-success">Disponible</span>{% endif %}</td>
-                    <td><form method="POST" action="{% url 'registrar_entrada' %}" class="d-flex flex-wrap gap-2">{% csrf_token %}<input type="hidden" name="producto_id" value="{{ inventario.producto_id }}">{% if inventario.producto.variantes.all %}<select name="variante_id" class="form-select form-select-sm" aria-label="Talla para registrar entrada">{% for variante in inventario.producto.variantes.all %}<option value="{{ variante.pk }}">{{ variante.talla }} ({{ variante.stock }})</option>{% endfor %}</select>{% endif %}<input type="number" min="1" name="cantidad_entrada" class="form-control form-control-sm" aria-label="Cantidad de entrada" required><button type="submit" class="btn btn-outline-success btn-sm">Registrar entrada</button></form></td>
-                    <td><form method="POST" action="{% url 'registrar_salida' %}" class="d-flex flex-wrap gap-2">{% csrf_token %}<input type="hidden" name="producto_id" value="{{ inventario.producto_id }}">{% if inventario.producto.variantes.all %}<select name="variante_id" class="form-select form-select-sm" aria-label="Talla para registrar salida">{% for variante in inventario.producto.variantes.all %}<option value="{{ variante.pk }}">{{ variante.talla }} ({{ variante.stock }})</option>{% endfor %}</select>{% endif %}<input type="number" min="1" name="cantidad_salida" class="form-control form-control-sm" aria-label="Cantidad de salida" required><button type="submit" class="btn btn-outline-danger btn-sm">Registrar salida</button></form></td>
-                </tr>
-                {% empty %}<tr><td colspan="5" class="text-center py-4">No hay productos registrados en el inventario.</td></tr>{% endfor %}
-            </tbody>
-        </table>
+<div class="container-fluid py-4 px-lg-5" style="background-color: #0b0b0b; min-height: 100vh; color: #f8f9fa;">
+
+    <!-- Encabezado Principal -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-5 pb-3 border-bottom" style="border-color: rgba(255,255,255,0.1) !important;">
+        <div>
+            <span class="badge text-uppercase tracking-widest px-3 py-1 mb-2" style="background-color: #c5a059; color: #000; font-weight: 600; letter-spacing: 2px;">Panel Ejecutivo</span>
+            <h2 class="fw-bold text-white mb-0" style="font-family: serif;">Inventario MH'ELEGANZA</h2>
+        </div>
+        <a href="{% url 'admin_productos' %}" class="btn btn-outline-light rounded-pill px-4 py-2 mt-3 mt-md-0 fw-semibold shadow-sm">
+            <i class="bi bi-sliders me-2"></i> Gestión de productos y pedidos
+        </a>
     </div>
-    <section class="mt-5">
-        <h3 class="h5 mb-3">{% if request.resolver_match.url_name == 'historial_movimientos' %}Historial de movimientos{% else %}Movimientos recientes{% endif %}</h3>
-        <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Stock resultante</th></tr></thead><tbody>
-            {% for movimiento in movimientos %}<tr><td>{{ movimiento.creado_en|date:"Y-m-d H:i" }}</td><td>{{ movimiento.producto.nombre }}</td><td>{{ movimiento.get_tipo_display }}</td><td>{{ movimiento.cantidad }}</td><td>{{ movimiento.stock_resultante }}</td></tr>{% empty %}<tr><td colspan="5" class="text-center">No hay movimientos registrados.</td></tr>{% endfor %}
-        </tbody></table></div>
+
+    <!-- Sistema de Alertas y Mensajes -->
+    {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+                <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'warning' %}alert-warning{% else %}alert-success{% endif %} rounded-3 border-0 shadow-sm" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if agotados %}
+        <div class="alert alert-danger bg-danger bg-opacity-10 text-danger border border-danger rounded-3 shadow-sm mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i><strong>Stock agotado:</strong>
+            {% for inv in agotados %}{{ inv.producto.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}
+        </div>
+    {% endif %}
+
+    {% if notificaciones %}
+        <section class="mb-4">
+            <h3 class="h6 text-uppercase text-warning fw-bold mb-3" style="letter-spacing: 1px;">Notificaciones de inventario</h3>
+            <div class="d-flex flex-column gap-2">
+                {% for alerta in notificaciones %}
+                    <div class="alert alert-warning bg-dark text-warning border border-warning border-opacity-25 rounded-3 d-flex justify-content-between align-items-center py-2 px-3 m-0" role="status">
+                        <span><i class="bi bi-bell me-2"></i>{{ alerta.mensaje }}</span>
+                        <time class="small opacity-75">{{ alerta.creada_en|date:"Y-m-d H:i" }}</time>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
+
+    {% if stock_bajo %}
+        <div class="alert alert-warning bg-warning bg-opacity-10 text-warning border border-warning rounded-3 shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-circle-fill me-2"></i><strong>Stock bajo:</strong>
+            {% for inv in stock_bajo %}{{ inv.producto.nombre }} (<span class="fw-bold">{{ inv.stock_actual }}</span>){% if not forloop.last %}, {% endif %}{% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Tarjeta Principal de Inventario -->
+    <div class="card border-0 shadow-lg rounded-4 p-4 mb-5" style="background-color: #141414; border: 1px solid rgba(197, 160, 89, 0.2) !important;">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom" style="border-color: rgba(255,255,255,0.1) !important;">
+            <h4 class="fw-bold text-white m-0" style="font-family: serif;">
+                <i class="bi bi-boxes text-warning me-2"></i> Control de Existencias
+            </h4>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0" style="background-color: transparent;">
+                <thead>
+                    <tr class="text-uppercase small text-muted border-bottom" style="border-color: rgba(255,255,255,0.1) !important;">
+                        <th scope="col" class="py-3">Producto</th>
+                        <th scope="col" class="py-3">Stock Actual</th>
+                        <th scope="col" class="py-3">Estado</th>
+                        <th scope="col" class="py-3">Registrar Entrada</th>
+                        <th scope="col" class="py-3">Registrar Salida</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inventario in inventarios %}
+                    <tr style="border-color: rgba(255,255,255,0.05) !important;">
+                        <td class="py-3 fw-semibold text-white">
+                            {{ inventario.producto.nombre }}
+                        </td>
+                        <td class="py-3">
+                            <span class="fs-6 fw-bold text-light">{{ inventario.stock_actual }}</span>
+                            {% for variante in inventario.producto.variantes.all %}
+                                <small class="d-block text-muted font-monospace mt-1">↳ {{ variante.talla }}: <span class="text-warning">{{ variante.stock }}</span></small>
+                            {% endfor %}
+                        </td>
+                        <td class="py-3">
+                            {% if inventario.stock_actual == 0 %}
+                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-3 py-1 rounded-pill small">Agotado</span>
+                            {% elif inventario.stock_actual <= inventario.stock_minimo %}
+                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning px-3 py-1 rounded-pill small">Stock bajo</span>
+                            {% else %}
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success px-3 py-1 rounded-pill small">Disponible</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3">
+                            <form method="POST" action="{% url 'registrar_entrada' %}" class="d-flex flex-wrap gap-2 align-items-center">
+                                {% csrf_token %}
+                                <input type="hidden" name="producto_id" value="{{ inventario.producto_id }}">
+                                {% if inventario.producto.variantes.all %}
+                                    <select name="variante_id" class="form-select form-select-sm bg-dark text-light border-secondary" aria-label="Talla para registrar entrada">
+                                        {% for variante in inventario.producto.variantes.all %}
+                                            <option value="{{ variante.pk }}">{{ variante.talla }} ({{ variante.stock }})</option>
+                                        {% endfor %}
+                                    </select>
+                                {% endif %}
+                                <input type="number" min="1" name="cantidad_entrada" class="form-control form-control-sm bg-dark text-light border-secondary" style="width: 80px;" placeholder="Cant." aria-label="Cantidad de entrada" required>
+                                <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-3">Entrada</button>
+                            </form>
+                        </td>
+                        <td class="py-3">
+                            <form method="POST" action="{% url 'registrar_salida' %}" class="d-flex flex-wrap gap-2 align-items-center">
+                                {% csrf_token %}
+                                <input type="hidden" name="producto_id" value="{{ inventario.producto_id }}">
+                                {% if inventario.producto.variantes.all %}
+                                    <select name="variante_id" class="form-select form-select-sm bg-dark text-light border-secondary" aria-label="Talla para registrar salida">
+                                        {% for variante in inventario.producto.variantes.all %}
+                                            <option value="{{ variante.pk }}">{{ variante.talla }} ({{ variante.stock }})</option>
+                                        {% endfor %}
+                                    </select>
+                                {% endif %}
+                                <input type="number" min="1" name="cantidad_salida" class="form-control form-control-sm bg-dark text-light border-secondary" style="width: 80px;" placeholder="Cant." aria-label="Cantidad de salida" required>
+                                <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">Salida</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No hay productos registrados en el inventario.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Sección de Historial / Movimientos Recientes -->
+    <section class="card border-0 shadow-lg rounded-4 p-4" style="background-color: #141414; border: 1px solid rgba(197, 160, 89, 0.2) !important;">
+        <h3 class="h5 text-white mb-4" style="font-family: serif;">
+            <i class="bi bi-clock-history text-warning me-2"></i>
+            {% if request.resolver_match.url_name == 'historial_movimientos' %}Historial completo de movimientos{% else %}Movimientos recientes{% endif %}
+        </h3>
+        <div class="table-responsive">
+            <table class="table table-dark table-sm table-hover align-middle mb-0" style="background-color: transparent;">
+                <thead>
+                    <tr class="text-uppercase small text-muted border-bottom" style="border-color: rgba(255,255,255,0.1) !important;">
+                        <th class="py-3">Fecha</th>
+                        <th class="py-3">Producto</th>
+                        <th class="py-3">Tipo</th>
+                        <th class="py-3">Cantidad</th>
+                        <th class="py-3">Stock Resultante</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movimiento in movimientos %}
+                    <tr style="border-color: rgba(255,255,255,0.05) !important;">
+                        <td class="py-3 text-muted small">{{ movimiento.creado_en|date:"Y-m-d H:i" }}</td>
+                        <td class="py-3 text-white fw-semibold">{{ movimiento.producto.nombre }}</td>
+                        <td class="py-3">
+                            <span class="badge bg-secondary bg-opacity-25 text-light px-2 py-1">{{ movimiento.get_tipo_display }}</span>
+                        </td>
+                        <td class="py-3 fw-bold text-warning">{{ movimiento.cantidad }}</td>
+                        <td class="py-3">{{ movimiento.stock_resultante }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No hay movimientos registrados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </section>
+
 </div>
 {% endblock %}

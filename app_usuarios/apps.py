@@ -2,4 +2,8 @@ from django.apps import AppConfig
 
 
 class AppUsuariosConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
     name = 'app_usuarios'
+
+    def ready(self):
+        import app_usuarios.signals  # Importa los signals para que se registren al iniciar la app

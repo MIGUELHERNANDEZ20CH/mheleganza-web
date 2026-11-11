@@ -179,6 +179,35 @@ class CatalogoYProductosTests(TestCase):
 		self.assertFalse(producto.disponible)
 		self.assertTrue(NotificacionInventario.objects.filter(producto=producto).exists())
 
+	def test_admin_actualiza_stock_de_variante_y_total_inventariado(self):
+		variante_m = VarianteProducto.objects.create(
+			producto=self.producto,
+			talla='M',
+			stock=2,
+		)
+		variante_l = VarianteProducto.objects.create(
+			producto=self.producto,
+			talla='L',
+			stock=1,
+		)
+		session = self.client.session
+		session['usuario'] = {'rol': 'admin'}
+		session.save()
+
+		response = self.client.post(reverse('admin_productos'), {
+			'actualizar_stock': '1',
+			'producto_id': self.producto.pk,
+			'variante_id': variante_l.pk,
+			'stock': 3,
+		})
+
+		self.assertRedirects(response, reverse('admin_productos'))
+		variante_l.refresh_from_db()
+		inventario = Inventario.objects.get(producto=self.producto)
+		self.assertEqual(variante_m.stock, 2)
+		self.assertEqual(variante_l.stock, 3)
+		self.assertEqual(inventario.stock_actual, 5)
+
 
 class CargarCatalogoMHEleganzaTests(TestCase):
 	def test_comando_crea_20_productos_de_las_marcas_solicitadas_y_es_repetible(self):

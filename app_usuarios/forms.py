@@ -1,6 +1,11 @@
-from django import forms
-from django.core.exceptions import ValidationError
 import re
+
+from django import forms
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+
+from .models import PerfilCliente
+
 
 class RegistroForm(forms.Form):
     nombre = forms.CharField(
@@ -30,19 +35,13 @@ class RegistroForm(forms.Form):
     )
 
     def clean_email(self):
-        email = self.cleaned_data.get('email')
-        if '@' not in email:
-            raise ValidationError("Correo no válido")
-        from django.contrib.auth import get_user_model
-
+        email = self.cleaned_data['email']
         if get_user_model().objects.filter(email__iexact=email).exists():
             raise ValidationError("El correo ya está registrado")
         return email.lower()
 
     def clean_telefono(self):
         telefono = self.cleaned_data['telefono'].strip()
-        from .models import PerfilCliente
-
         if PerfilCliente.objects.filter(telefono=telefono).exists():
             raise ValidationError("El teléfono ya está registrado.")
         return telefono
@@ -65,12 +64,22 @@ class RegistroForm(forms.Form):
 class LoginForm(forms.Form):
     """Formulario para la HU02 (Inicio de sesión por correo o teléfono y contraseña)."""
     identificador = forms.CharField(
+        label='Usuario',
         required=True,
         error_messages={'required': 'Campos obligatorios'},
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Correo electrónico o Teléfono'})
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Correo electrónico o teléfono',
+            'autocomplete': 'username',
+        })
     )
     password = forms.CharField(
+        label='Contraseña',
         required=True,
         error_messages={'required': 'Campos obligatorios'},
-        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Contraseña'})
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Contraseña',
+            'autocomplete': 'current-password',
+        })
     )

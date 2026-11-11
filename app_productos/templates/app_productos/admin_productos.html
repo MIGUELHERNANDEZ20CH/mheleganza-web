@@ -1,4 +1,201 @@
 {% extends 'base.html' %}
+{% block body_class %}admin-products-page{% endblock %}
+{% block extra_css %}
+<style>
+    body.admin-products-page {
+        background:
+            radial-gradient(ellipse at 12% 0%, rgb(197 160 89 / 7%), transparent 34%),
+            #0b0b0b;
+        color: #f5f3ee;
+    }
+
+    .admin-products-page main.container {
+        max-width: 1680px;
+    }
+
+    .admin-products-page h2,
+    .admin-products-page h4 {
+        color: #f5f3ee !important;
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        letter-spacing: 0.025em;
+    }
+
+    .admin-products-page h2 {
+        font-size: clamp(1.8rem, 3vw, 2.5rem);
+    }
+
+    .admin-products-page h4 {
+        color: #e5c158 !important;
+        font-size: 1.65rem;
+    }
+
+    .admin-products-page .card {
+        border: 1px solid rgb(197 160 89 / 22%) !important;
+        border-radius: 1.1rem !important;
+        background: linear-gradient(145deg, #171717, #111) !important;
+        color: #f5f3ee;
+        box-shadow: 0 18px 48px rgb(0 0 0 / 28%) !important;
+    }
+
+    .admin-products-page .form-label {
+        color: #e5c158;
+        font-weight: 600;
+        letter-spacing: 0.025em;
+    }
+
+    .admin-products-page .form-control,
+    .admin-products-page .form-select {
+        min-height: 2.35rem;
+        border: 1px solid #3b3830;
+        background-color: #101010;
+        color: #f5f3ee;
+    }
+
+    .admin-products-page textarea.form-control {
+        min-height: 5rem;
+    }
+
+    .admin-products-page .form-control::placeholder {
+        color: #96918a;
+        opacity: 1;
+    }
+
+    .admin-products-page .form-control:focus,
+    .admin-products-page .form-select:focus {
+        border-color: #c5a059;
+        background-color: #141414;
+        box-shadow: 0 0 0 0.2rem rgb(197 160 89 / 17%);
+        color: #fff;
+    }
+
+    .admin-products-page .table {
+        --bs-table-bg: transparent;
+        --bs-table-color: #e9e6df;
+        --bs-table-border-color: rgb(255 255 255 / 8%);
+        margin-bottom: 0;
+        vertical-align: middle;
+    }
+
+    .admin-products-page .table thead th {
+        border-bottom: 1px solid rgb(197 160 89 / 38%);
+        background: #1c1b19;
+        color: #e5c158;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .admin-products-page .table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+
+    .admin-products-page .table tbody tr:hover {
+        --bs-table-bg: rgb(197 160 89 / 5%);
+    }
+
+    .admin-products-page .table td {
+        color: #e9e6df;
+    }
+
+    .admin-products-page .table td a {
+        color: #e5c158;
+        text-decoration-color: rgb(229 193 88 / 45%);
+        text-underline-offset: 0.2em;
+    }
+
+    .admin-products-page .text-dark {
+        color: #f5f3ee !important;
+    }
+
+    .admin-products-page .text-muted {
+        color: #aaa59d !important;
+    }
+
+    .admin-products-page .btn-dark {
+        border: 1px solid #c5a059;
+        background: #c5a059;
+        color: #15120b;
+        font-weight: 700;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .admin-products-page .btn-dark:hover {
+        border-color: #e5c158;
+        background: #e5c158;
+        color: #111;
+        transform: translateY(-1px);
+    }
+
+    .admin-products-page .btn-outline-dark {
+        border-color: #c5a059;
+        color: #e5c158;
+    }
+
+    .admin-products-page .btn-outline-dark:hover {
+        background: #c5a059;
+        color: #15120b;
+    }
+
+    .admin-products-page .badge {
+        padding: 0.45em 0.75em;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        font-weight: 650;
+        letter-spacing: 0.02em;
+    }
+
+    .admin-products-page .badge.bg-success {
+        border-color: rgb(66 185 131 / 30%);
+        background: rgb(22 101 68 / 32%) !important;
+        color: #9ce0bd;
+    }
+
+    .admin-products-page .badge.bg-danger {
+        border-color: rgb(232 102 102 / 30%);
+        background: rgb(124 39 39 / 32%) !important;
+        color: #ffb0aa;
+    }
+
+    .admin-products-page .badge.bg-secondary {
+        border-color: rgb(197 160 89 / 28%);
+        background: rgb(197 160 89 / 12%) !important;
+        color: #e5c158;
+    }
+
+    .admin-products-page .alert-warning {
+        border: 1px solid rgb(197 160 89 / 30%);
+        background: rgb(197 160 89 / 9%);
+        color: #f0d998;
+    }
+
+    .admin-products-page .alert-success {
+        border-color: rgb(66 185 131 / 30%);
+        background: rgb(22 101 68 / 24%);
+        color: #b7ebcf;
+    }
+
+    .admin-products-page .alert-danger {
+        border-color: rgb(232 102 102 / 30%);
+        background: rgb(124 39 39 / 24%);
+        color: #ffc2bd;
+    }
+
+    @media (max-width: 991.98px) {
+        .admin-products-page .card {
+            padding: 1.25rem !important;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .admin-products-page .table tbody tr,
+        .admin-products-page .btn-dark {
+            transition: none;
+        }
+    }
+</style>
+{% endblock %}
 {% block content %}
 <div class="container my-5">
     {% if messages %}{% for message in messages %}<div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %}" role="alert">{{ message }}</div>{% endfor %}{% endif %}

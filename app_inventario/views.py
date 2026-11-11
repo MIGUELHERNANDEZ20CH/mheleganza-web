@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.db import transaction
+from django.db.models import F
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .models import Inventario, MovimientoInventario, NotificacionInventario
@@ -24,12 +25,19 @@ def _render_panel_inventario(request, inventarios, agotados, stock_bajo, movimie
 def panel_inventario(request):
     if not _es_admin(request):
         return redirect('login')
-    inventarios = Inventario.objects.select_related('producto').order_by('producto__nombre')
+    inventarios = (
+        Inventario.objects.select_related('producto')
+        .prefetch_related('producto__variantes')
+        .order_by('producto__nombre')
+    )
     return _render_panel_inventario(
         request,
         inventarios,
         inventarios.filter(stock_actual=0),
-        inventarios.filter(stock_actual__gt=0, stock_actual__lte=5),
+        inventarios.filter(
+            stock_actual__gt=0,
+            stock_actual__lte=F('stock_minimo'),
+        ),
         MovimientoInventario.objects.select_related('producto')[:20],
     )
 
@@ -107,10 +115,17 @@ def registrar_salida(request):
 def alerta_stock_bajo(request):
     if not _es_admin(request):
         return redirect('login')
-    inventarios_bajos = Inventario.objects.select_related('producto').filter(
-        stock_actual__lte=5,
-    ).order_by('stock_actual')
-    inventarios = Inventario.objects.select_related('producto').all()
+    inventarios_bajos = (
+        Inventario.objects.select_related('producto')
+        .prefetch_related('producto__variantes')
+        .filter(stock_actual__lte=F('stock_minimo'))
+        .order_by('stock_actual')
+    )
+    inventarios = (
+        Inventario.objects.select_related('producto')
+        .prefetch_related('producto__variantes')
+        .all()
+    )
     return _render_panel_inventario(
         request,
         inventarios,
@@ -123,12 +138,17 @@ def alerta_stock_bajo(request):
 def historial_movimientos(request):
     if not _es_admin(request):
         return redirect('login')
-    inventarios = Inventario.objects.select_related('producto')
+    inventarios = Inventario.objects.select_related('producto').prefetch_related(
+        'producto__variantes',
+    )
     return _render_panel_inventario(
         request,
         inventarios,
         inventarios.filter(stock_actual=0),
-        inventarios.filter(stock_actual__gt=0, stock_actual__lte=5),
+        inventarios.filter(
+            stock_actual__gt=0,
+            stock_actual__lte=F('stock_minimo'),
+        ),
         MovimientoInventario.objects.select_related('producto').all(),
     )
 

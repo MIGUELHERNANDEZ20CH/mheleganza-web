@@ -50,7 +50,10 @@ class RegistroLoginTests(TestCase):
 		usuario = get_user_model().objects.create_user(
 			username='ana@example.com', email='ana@example.com', password='Eleganza_123'
 		)
-		PerfilCliente.objects.create(usuario=usuario, telefono='3005550101')
+		PerfilCliente.objects.update_or_create(
+			usuario=usuario,
+			defaults={'telefono': '3005550101'},
+		)
 
 		response = self.client.post(reverse('registro'), {
 			'nombre': 'Ana Pérez',
@@ -94,7 +97,10 @@ class RegistroLoginTests(TestCase):
 		usuario = get_user_model().objects.create_user(
 			username='ana@example.com', email='ana@example.com', password='Eleganza_123', first_name='Ana'
 		)
-		PerfilCliente.objects.create(usuario=usuario, telefono='3005550101')
+		PerfilCliente.objects.update_or_create(
+			usuario=usuario,
+			defaults={'telefono': '3005550101'},
+		)
 
 		for identificador in ('ana@example.com', '3005550101'):
 			response = self.client.post(reverse('login'), {
@@ -127,8 +133,14 @@ class RegistroLoginTests(TestCase):
 		cliente = User.objects.create_user(
 			username='cliente@example.com', email='cliente@example.com', password='Cliente_123'
 		)
-		PerfilCliente.objects.create(usuario=admin, telefono='3005550103', rol='admin')
-		PerfilCliente.objects.create(usuario=cliente, telefono='3005550104')
+		PerfilCliente.objects.update_or_create(
+			usuario=admin,
+			defaults={'telefono': '3005550103', 'rol': 'admin'},
+		)
+		PerfilCliente.objects.update_or_create(
+			usuario=cliente,
+			defaults={'telefono': '3005550104'},
+		)
 
 		response_admin = self.client.post(reverse('login'), {
 			'identificador': 'admin@example.com', 'password': 'Admin_123',
@@ -146,13 +158,16 @@ class RegistroLoginTests(TestCase):
 		usuario = get_user_model().objects.create_user(
 			username='ana@example.com', email='ana@example.com', password='Eleganza_123'
 		)
-		PerfilCliente.objects.create(usuario=usuario, telefono='3005550101')
+		PerfilCliente.objects.update_or_create(
+			usuario=usuario,
+			defaults={'telefono': '3005550101'},
+		)
 
 		response = self.client.post(reverse('recuperar_contrasena'), {'email': 'ana@example.com'})
 		self.assertRedirects(response, reverse('password_reset_done'))
 		self.assertEqual(len(mail.outbox), 1)
 		confirm_path = re.search(
-			r'http://testserver(?P<path>/usuarios/password-reset/confirmar/\S+)',
+			r'https?://[^/]+(?P<path>/usuarios/password-reset/confirmar/\S+)',
 			mail.outbox[0].body,
 		).group('path').strip()
 		confirm_response = self.client.get(confirm_path)
@@ -172,11 +187,17 @@ class RegistroLoginTests(TestCase):
 		usuario = get_user_model().objects.create_user(
 			username='ana@example.com', email='ana@example.com', password='Eleganza_123', first_name='Ana'
 		)
-		PerfilCliente.objects.create(usuario=usuario, telefono='3005550101')
+		PerfilCliente.objects.update_or_create(
+			usuario=usuario,
+			defaults={'telefono': '3005550101'},
+		)
 		otro = get_user_model().objects.create_user(
 			username='otro@example.com', email='otro@example.com', password='Eleganza_123'
 		)
-		PerfilCliente.objects.create(usuario=otro, telefono='3005550102')
+		PerfilCliente.objects.update_or_create(
+			usuario=otro,
+			defaults={'telefono': '3005550102'},
+		)
 		self.client.force_login(usuario)
 
 		response = self.client.post(reverse('actualizar_perfil'), {

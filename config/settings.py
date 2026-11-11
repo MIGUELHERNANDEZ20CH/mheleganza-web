@@ -91,6 +91,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # Módulos requeridos para autenticación con Google (django-allauth)
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+
     # Apps del proyecto MH’ELEGANZA
     'app_usuarios',
     'app_productos',
@@ -108,6 +115,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -142,6 +150,20 @@ if os.getenv('DATABASE_URL', '').lower().startswith(('mysql://', 'mysql+')):
     import pymysql
 
     pymysql.install_as_MySQLdb()
+
+# ==========================================
+# CONFIGURACIÓN DE ALLAUTH / GOOGLE OAUTH
+# ==========================================
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 LANGUAGE_CODE = 'es-co'
 TIME_ZONE = 'America/Bogota'
@@ -189,6 +211,7 @@ EMAIL_USE_SSL = env_bool('EMAIL_USE_SSL')
 EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '20'))
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@mheleganza.com')
 SERVER_EMAIL = os.getenv('SERVER_EMAIL', DEFAULT_FROM_EMAIL)
+ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', '').strip()
 
 if DEBUG:
     EMAIL_BACKEND = os.getenv(
@@ -232,3 +255,5 @@ X_FRAME_OPTIONS = 'DENY'
 
 if env_bool('DJANGO_USE_X_FORWARDED_PROTO'):
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+ACCOUNT_LOGIN_TEMPLATE = 'app_usuarios/login.html'

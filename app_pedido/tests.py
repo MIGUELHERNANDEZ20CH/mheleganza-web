@@ -2,8 +2,10 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from app_inventario.models import Inventario
 from app_productos.models import Producto, VarianteProducto
@@ -49,6 +51,47 @@ class CheckoutStockTests(TestCase):
 		self.producto.refresh_from_db()
 		self.assertEqual(self.inventario.stock_actual, 0)
 		self.assertFalse(self.producto.disponible)
+
+	@override_settings(
+		DEBUG=True,
+		EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+		ADMIN_EMAIL='admin-alertas@example.com',
+	)
+	def test_checkout_notifica_al_admin_con_detalle_del_nuevo_pedido(self):
+		response = self.client.post(reverse('checkout'), {
+			'direccion': 'Calle 10 # 5-20',
+			'metodo_pago': 'EFECTIVO',
+		})
+
+		self.assertRedirects(response, reverse('mis_pedidos'))
+		pedido = Pedido.objects.get(cliente=self.usuario)
+		admin_email = next(
+			message for message in mail.outbox
+			if message.to == ['admin-alertas@example.com']
+		)
+		self.assertIn(f'#{pedido.pk}', admin_email.subject)
+		self.assertIn('Chaqueta QA', admin_email.body)
+		self.assertIn('x 2', admin_email.body)
+		self.assertIn('$500.00', admin_email.body)
+		self.assertIn(self.usuario.email, admin_email.body)
+		fecha_pedido = timezone.localtime(pedido.fecha_creacion).strftime('%Y-%m-%d')
+		self.assertIn(fecha_pedido, admin_email.body)
+
+	@override_settings(
+		DEBUG=True,
+		EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+		ADMIN_EMAIL='admin-alertas@example.com',
+	)
+	@patch('app_pedido.notifications.send_mail', side_effect=OSError('SMTP unavailable'))
+	def test_fallo_de_alerta_admin_no_interrumpe_checkout(self, send_admin_alert):
+		response = self.client.post(reverse('checkout'), {
+			'direccion': 'Calle 10 # 5-20',
+			'metodo_pago': 'EFECTIVO',
+		})
+
+		self.assertRedirects(response, reverse('mis_pedidos'))
+		self.assertTrue(Pedido.objects.filter(cliente=self.usuario, estado='PAGADO').exists())
+		send_admin_alert.assert_called_once()
 
 	@override_settings(DEBUG=True)
 	def test_checkout_descuenta_la_talla_seleccionada_y_la_guarda_en_el_pedido(self):
@@ -200,7 +243,34 @@ class CheckoutStockTests(TestCase):
 		self.assertContains(response, '250')
 		self.assertContains(response, 'Chaqueta QA')
 
-	def test_administrador_solo_puede_avanzar_estado_por_transiciones_permitidas(self):
+	@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+	def test_cambio_estado_envia_correo_al_cliente_del_pedido(self):
+		pedido = Pedido.objects.create(
+			cliente=self.usuario,
+			metodo_pago='EFECTIVO',
+			total='250.00',
+			direccion_envio='Calle 10',
+		)
+		self.usuario.email = 'destinatario@example.com'
+		self.usuario.save(update_fields=['email'])
+		session = self.client.session
+		session['usuario'] = {'rol': 'admin'}
+		session.save()
+
+		with self.captureOnCommitCallbacks(execute=True):
+			response = self.client.post(reverse('actualizar_estado_pedido', args=[pedido.pk]), {
+				'nuevo_estado': 'PAGADO',
+			})
+		self.assertRedirects(response, reverse('admin_productos'))
+		pedido.refresh_from_db()
+		self.assertEqual(pedido.estado, 'PAGADO')
+		self.assertEqual(len(mail.outbox), 1)
+		self.assertEqual(mail.outbox[0].to, ['destinatario@example.com'])
+		self.assertIn('Pendiente a Pagado', mail.outbox[0].body)
+		self.assertIn('pago fue confirmado', mail.outbox[0].body)
+
+	@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+	def test_transicion_invalida_no_envia_correo(self):
 		pedido = Pedido.objects.create(
 			cliente=self.usuario,
 			metodo_pago='EFECTIVO',
@@ -212,17 +282,34 @@ class CheckoutStockTests(TestCase):
 		session.save()
 
 		response = self.client.post(reverse('actualizar_estado_pedido', args=[pedido.pk]), {
-			'nuevo_estado': 'PAGADO',
-		})
-		self.assertRedirects(response, reverse('admin_productos'))
-		pedido.refresh_from_db()
-		self.assertEqual(pedido.estado, 'PAGADO')
-
-		response = self.client.post(reverse('actualizar_estado_pedido', args=[pedido.pk]), {
 			'nuevo_estado': 'PENDIENTE',
 		})
 		self.assertRedirects(response, reverse('admin_productos'))
 		pedido.refresh_from_db()
+		self.assertEqual(pedido.estado, 'PENDIENTE')
+		self.assertEqual(mail.outbox, [])
+
+	@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+	@patch('app_pedido.notifications.send_mail', side_effect=OSError('SMTP unavailable'))
+	def test_fallo_de_correo_no_revierte_el_cambio_de_estado(self, send_email):
+		pedido = Pedido.objects.create(
+			cliente=self.usuario,
+			metodo_pago='EFECTIVO',
+			total='250.00',
+			direccion_envio='Calle 10',
+		)
+		session = self.client.session
+		session['usuario'] = {'rol': 'admin'}
+		session.save()
+
+		with self.captureOnCommitCallbacks(execute=True):
+			response = self.client.post(reverse('actualizar_estado_pedido', args=[pedido.pk]), {
+				'nuevo_estado': 'PAGADO',
+			})
+
+		self.assertRedirects(response, reverse('admin_productos'))
+		pedido.refresh_from_db()
 		self.assertEqual(pedido.estado, 'PAGADO')
+		send_email.assert_called_once()
 
 # Create your tests here.

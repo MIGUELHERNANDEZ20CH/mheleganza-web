@@ -1,16 +1,19 @@
 import logging
 from decimal import Decimal
-from smtplib import SMTPException
 
 from django.contrib import messages
 from django.conf import settings
-from django.core.mail import send_mail
 from django.db import DatabaseError, transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
 from app_inventario.models import Inventario, MovimientoInventario, NotificacionInventario
 from app_productos.models import Producto, VarianteProducto
 from .models import DetallePedido, Pedido
+from .notifications import (
+    enviar_alerta_nuevo_pedido,
+    enviar_aviso_cambio_estado_pedido,
+)
+from .services import enviar_confirmacion_pedido
 
 logger = logging.getLogger(__name__)
 
@@ -153,17 +156,12 @@ def checkout_view(request):
                 error_pago = 'Producto no disponible'
             else:
                 request.session['carrito'] = {}
+                enviar_alerta_nuevo_pedido(pedido.pk)
                 email_enviado = 0
                 if request.user.email:
                     try:
-                        email_enviado = send_mail(
-                            f'Confirmación del pedido #{pedido.pk} - MH’ELEGANZA',
-                            f'Recibimos tu pedido #{pedido.pk} por un total de ${pedido.total}. Estado: {pedido.get_estado_display}.',
-                            settings.DEFAULT_FROM_EMAIL,
-                            [request.user.email],
-                            fail_silently=False,
-                        )
-                    except (OSError, SMTPException, ValueError):
+                        email_enviado = enviar_confirmacion_pedido(pedido.pk)
+                    except (OSError, ValueError, RuntimeError):
                         logger.exception('Could not send order confirmation')
                 mensaje = f'Pedido #{pedido.pk} generado. Estado: {pedido.get_estado_display}.'
                 if email_enviado:
@@ -234,7 +232,9 @@ def actualizar_estado_pedido(request, pedido_id):
     usuario = request.session.get('usuario')
     if not usuario or usuario.get('rol') != 'admin':
         return redirect('login')
-    pedido = get_object_or_404(Pedido, pk=pedido_id)
+    if request.method != 'POST':
+        return redirect('admin_productos')
+
     estado = request.POST.get('nuevo_estado', '')
     transiciones = {
         'PENDIENTE': {'PAGADO'},
@@ -243,10 +243,21 @@ def actualizar_estado_pedido(request, pedido_id):
         'ENTREGADO': set(),
         'RECHAZADO': set(),
     }
-    if request.method != 'POST' or estado not in dict(Pedido.ESTADOS) or estado not in transiciones[pedido.estado]:
-        messages.error(request, 'Cambio de estado no permitido.')
-    else:
-        pedido.estado = estado
-        pedido.save(update_fields=['estado'])
-        messages.success(request, 'Estado del pedido actualizado.')
+    with transaction.atomic():
+        pedido = get_object_or_404(
+            Pedido.objects.select_for_update(),
+            pk=pedido_id,
+        )
+        estado_anterior = pedido.estado
+        if estado not in dict(Pedido.ESTADOS) or estado not in transiciones[estado_anterior]:
+            messages.error(request, 'Cambio de estado no permitido.')
+        elif estado != estado_anterior:
+            pedido.estado = estado
+            pedido.save(update_fields=['estado'])
+            transaction.on_commit(
+                lambda pedido_id=pedido.pk, anterior=estado_anterior, nuevo=estado: (
+                    enviar_aviso_cambio_estado_pedido(pedido_id, anterior, nuevo)
+                )
+            )
+            messages.success(request, 'Estado del pedido actualizado.')
     return redirect('admin_productos')

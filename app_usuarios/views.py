@@ -9,6 +9,8 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import ensure_csrf_cookie
+from allauth.socialaccount.models import SocialApp
+
 from .forms import LoginForm, RegistroForm
 from .models import PerfilCliente
 
@@ -51,7 +53,15 @@ def login_view(request):
             'admin': {'usuario': 'admin@mheleganza.com', 'password': 'Admin123!'},
             'cliente': {'usuario': 'cliente@mheleganza.com', 'password': 'Cliente123!'},
         }
-    return render(request, 'app_usuarios/login.html', {'form': form, 'cuentas_demo': cuentas_demo})
+    google_login_enabled = SocialApp.objects.filter(
+        provider='google',
+        sites__id=settings.SITE_ID,
+    ).exists()
+    return render(request, 'app_usuarios/login.html', {
+        'form': form,
+        'cuentas_demo': cuentas_demo,
+        'google_login_enabled': google_login_enabled,
+    })
 
 # 2. Registrar usuario
 @ensure_csrf_cookie
@@ -75,10 +85,12 @@ def registro_view(request):
                         password=form.cleaned_data['password'],
                         first_name=nombre,
                     )
-                    PerfilCliente.objects.create(
+                    PerfilCliente.objects.update_or_create(
                         usuario=usuario,
-                        telefono=form.cleaned_data['telefono'],
-                        direccion=form.cleaned_data.get('direccion', '').strip(),
+                        defaults={
+                            'telefono': form.cleaned_data['telefono'],
+                            'direccion': form.cleaned_data.get('direccion', '').strip(),
+                        },
                     )
             except IntegrityError:
                 form.add_error('email', 'El correo ya está registrado')

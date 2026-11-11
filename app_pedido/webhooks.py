@@ -12,6 +12,7 @@ from app_inventario.models import Inventario, MovimientoInventario, Notificacion
 from app_productos.models import Producto, VarianteProducto
 
 from .models import Pedido
+from .notifications import enviar_alerta_nuevo_pedido
 from .services import enviar_confirmacion_pedido
 from .views_checkout import _stripe_amount
 
@@ -49,6 +50,7 @@ def _confirmar_pago(session):
     if not session_id or not pedido_id:
         raise ValueError('La sesión de Stripe no contiene referencias de pedido válidas.')
 
+    pedido_confirmado_ahora = False
     try:
         with transaction.atomic():
             pedido = (
@@ -152,12 +154,15 @@ def _confirmar_pago(session):
                     pedido.stripe_payment_intent_id = payment_intent_id or ''
                     pedido.save(update_fields=['estado', 'stripe_payment_intent_id'])
                     refund_required = False
+                    pedido_confirmado_ahora = True
     except DatabaseError:
         logger.exception('Database failure processing Stripe Checkout session %s', session_id)
         raise
     if refund_required:
         _refund(payment_intent_id, pedido_id)
         return
+    if pedido_confirmado_ahora:
+        enviar_alerta_nuevo_pedido(pedido_id)
     enviar_confirmacion_pedido(pedido_id)
 
 

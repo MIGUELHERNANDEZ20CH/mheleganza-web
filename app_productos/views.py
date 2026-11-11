@@ -233,36 +233,45 @@ def admin_productos_view(request):
 
     if request.method == 'POST' and 'actualizar_stock' in request.POST:
         try:
-            producto = get_object_or_404(Producto, pk=int(request.POST.get('producto_id', '0')))
+            producto_id = int(request.POST.get('producto_id', '0'))
             stock = int(request.POST.get('stock', '-1'))
             if stock < 0:
                 raise ValueError
-            variante_id = request.POST.get('variante_id', '').strip()
-            variantes = VarianteProducto.objects.filter(producto=producto)
-            if variante_id:
-                variante = variantes.filter(pk=variante_id).first()
-                if not variante:
-                    raise ValueError
-                variante.stock = stock
-                variante.save(update_fields=['stock'])
-                stock = sum(variantes.values_list('stock', flat=True))
-            elif variantes.exists():
-                raise ValueError
-            inventario, creado = Inventario.objects.get_or_create(
-                producto=producto,
-                defaults={'stock_actual': stock},
-            )
-            stock_anterior = inventario.stock_actual
-            if not creado:
-                inventario.stock_actual = stock
-                inventario.save(update_fields=['stock_actual', 'actualizado_en'])
-            if stock == 0 and (creado or stock_anterior > 0):
-                NotificacionInventario.objects.create(
-                    producto=producto,
-                    mensaje=f'{producto.nombre} se quedó sin unidades disponibles.',
+            with transaction.atomic():
+                producto = get_object_or_404(
+                    Producto.objects.select_for_update(),
+                    pk=producto_id,
                 )
-            producto.disponible = stock > 0
-            producto.save(update_fields=['disponible'])
+                inventario, creado = (
+                    Inventario.objects.select_for_update().get_or_create(
+                        producto=producto,
+                        defaults={'stock_actual': 0},
+                    )
+                )
+                variantes = VarianteProducto.objects.select_for_update().filter(
+                    producto=producto,
+                )
+                variante_id = request.POST.get('variante_id', '').strip()
+                if variante_id:
+                    variante = variantes.filter(pk=variante_id).first()
+                    if not variante:
+                        raise ValueError
+                    variante.stock = stock
+                    variante.save(update_fields=['stock'])
+                    stock = sum(variantes.values_list('stock', flat=True))
+                elif variantes.exists():
+                    raise ValueError
+                stock_anterior = inventario.stock_actual
+                if inventario.stock_actual != stock:
+                    inventario.stock_actual = stock
+                    inventario.save(update_fields=['stock_actual', 'actualizado_en'])
+                if stock == 0 and (creado or stock_anterior > 0):
+                    NotificacionInventario.objects.create(
+                        producto=producto,
+                        mensaje=f'{producto.nombre} se quedó sin unidades disponibles.',
+                    )
+                producto.disponible = stock > 0
+                producto.save(update_fields=['disponible'])
             messages.success(request, 'Actualización exitosa')
         except ValueError:
             messages.error(request, 'El stock debe ser un número igual o mayor que cero.')

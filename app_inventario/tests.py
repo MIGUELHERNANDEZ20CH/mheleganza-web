@@ -63,4 +63,23 @@ class InventarioTests(TestCase):
 		self.assertEqual(variante_l.stock, 3)
 		self.assertEqual(inventario.stock_actual, 5)
 
+	def test_panel_aplica_el_stock_minimo_configurado_por_producto(self):
+		inventario = Inventario.objects.get(producto=self.producto)
+		inventario.stock_minimo = 1
+		inventario.save(update_fields=['stock_minimo'])
+
+		response = self.client.get(reverse('panel_inventario'))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(list(response.context['stock_bajo'].values_list('pk', flat=True)), [])
+
+		inventario.stock_minimo = 2
+		inventario.save(update_fields=['stock_minimo'])
+		response = self.client.get(reverse('panel_inventario'))
+
+		self.assertEqual(
+			list(response.context['stock_bajo'].values_list('pk', flat=True)),
+			[inventario.pk],
+		)
+
 # Create your tests here.
