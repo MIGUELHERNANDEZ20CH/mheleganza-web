@@ -19,10 +19,10 @@ STATUS_MESSAGES = {
 
 
 def _admin_recipients():
-    if settings.ADMIN_EMAIL:
+    if getattr(settings, 'ADMIN_EMAIL', None):
         return [settings.ADMIN_EMAIL]
 
-    recipients = [email for _, email in settings.ADMINS if email]
+    recipients = [email for _, email in getattr(settings, 'ADMINS', []) if email]
     if not recipients:
         recipients = list(
             get_user_model().objects.filter(
@@ -58,6 +58,8 @@ def enviar_alerta_nuevo_pedido(pedido_id):
             for item in pedido.items.all()
         ]
         fecha = timezone.localtime(pedido.fecha_creacion).strftime('%Y-%m-%d %H:%M:%S %Z')
+        productos_str = "\n".join(lineas) if lineas else "- Sin productos"
+        
         cuerpo = (
             f'Se confirmó un nuevo pedido en MH’ELEGANZA.\n\n'
             f'Número de orden: #{pedido.pk}\n'
@@ -65,8 +67,8 @@ def enviar_alerta_nuevo_pedido(pedido_id):
             f'Correo del cliente: {pedido.cliente.email or "No registrado"}\n'
             f'Fecha: {fecha}\n'
             f'Estado: {pedido.get_estado_display()}\n\n'
-            'Productos:\n'
-            f'{"\n".join(lineas) if lineas else "- Sin productos"}\n\n'
+            f'Productos:\n'
+            f'{productos_str}\n\n'
             f'Total: ${pedido.total:,.2f}\n'
             f'Dirección de envío: {pedido.direccion_envio}'
         )
@@ -103,11 +105,13 @@ def enviar_aviso_cambio_estado_pedido(pedido_id, estado_anterior, estado_nuevo):
         estado_nuevo_display = dict(Pedido.ESTADOS).get(estado_nuevo, estado_nuevo)
         asunto = f'Actualización del pedido #{pedido.pk}: {estado_nuevo_display}'
         nombre_cliente = pedido.cliente.get_full_name() or pedido.cliente.username
+        mensaje_estado = STATUS_MESSAGES.get(estado_nuevo, 'El estado de tu pedido fue actualizado.')
+        
         mensaje = (
             f'Hola {nombre_cliente},\n\n'
             f'El estado de tu pedido #{pedido.pk} cambió de '
             f'{estado_anterior_display} a {estado_nuevo_display}.\n'
-            f'{STATUS_MESSAGES.get(estado_nuevo, "El estado de tu pedido fue actualizado.")}\n\n'
+            f'{mensaje_estado}\n\n'
             f'Total: ${pedido.total:,.2f}\n'
             f'Dirección de envío: {pedido.direccion_envio}\n\n'
             'Gracias por comprar en MH’ELEGANZA.'
