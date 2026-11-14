@@ -12,6 +12,8 @@ from app_inventario.models import Inventario, NotificacionInventario
 from app_pedido.models import Pedido
 from .models import ImagenProducto, Producto, VarianteProducto
 
+TALLAS_REGISTRO = ('XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'Única')
+
 
 def producto_para_vista(producto):
     inventario = getattr(producto, 'inventario', None)
@@ -60,6 +62,7 @@ def producto_para_vista(producto):
         'imagen_url': imagen_principal,
         'imagenes': imagenes,
         'tallas_disponibles': tallas_disponibles,
+        'tallas': [variante['talla'] for variante in tallas_disponibles],
         'variantes': variantes_para_vista,
         'disponible': producto.disponible and stock > 0 and bool(tallas_disponibles),
         'stock': stock,
@@ -90,11 +93,29 @@ def catalogo_view(request):
                 .values_list(campo, flat=True)
                 .distinct()
             )
-            for campo in ('categoria', 'talla', 'color', 'marca')
+            for campo in ('categoria', 'color', 'marca')
         }
-        for campo in ('categoria', 'talla', 'color', 'marca'):
+        opciones_filtro['talla'] = sorted({
+            *VarianteProducto.objects.filter(
+                producto__in=disponibles,
+                stock__gt=0,
+            ).values_list('talla', flat=True),
+            *disponibles.filter(variantes__isnull=True).values_list('talla', flat=True),
+        })
+        for campo in ('categoria', 'color', 'marca'):
             if filtros[campo]:
                 consulta = consulta.filter(**{f'{campo}__icontains': filtros[campo]})
+        if filtros['talla']:
+            consulta = consulta.filter(
+                Q(
+                    variantes__talla__icontains=filtros['talla'],
+                    variantes__stock__gt=0,
+                )
+                | Q(
+                    variantes__isnull=True,
+                    talla__icontains=filtros['talla'],
+                )
+            ).distinct()
         for campo, operador in (('precio_min', 'gte'), ('precio_max', 'lte')):
             if filtros[campo]:
                 try:
@@ -191,9 +212,33 @@ def admin_productos_view(request):
     if request.method == 'POST' and 'agregar_producto' in request.POST:
         try:
             with transaction.atomic():
-                stock = int(request.POST.get('stock', '0'))
-                if stock < 0:
-                    raise ValueError
+                campos_stock_talla = {
+                    talla: f'stock_{talla}'
+                    for talla in TALLAS_REGISTRO
+                }
+                formulario_nuevo = any(
+                    campo in request.POST
+                    for campo in campos_stock_talla.values()
+                )
+                if formulario_nuevo:
+                    stocks_por_talla = {}
+                    for talla, campo in campos_stock_talla.items():
+                        valor = request.POST.get(campo, '').strip()
+                        if not valor:
+                            continue
+                        stock_talla = int(valor)
+                        if stock_talla < 0:
+                            raise ValueError
+                        stocks_por_talla[talla] = stock_talla
+                    if not stocks_por_talla:
+                        raise ValueError
+                else:
+                    talla = request.POST.get('talla', '').strip()
+                    stock = int(request.POST.get('stock', '0'))
+                    if not talla or stock < 0:
+                        raise ValueError
+                    stocks_por_talla = {talla: stock}
+                stock_total = sum(stocks_por_talla.values())
                 precio = Decimal(request.POST.get('precio', '0'))
                 if not precio.is_finite() or precio < 0:
                     raise ValueError
@@ -202,26 +247,25 @@ def admin_productos_view(request):
                     descripcion=request.POST.get('descripcion', '').strip(),
                     precio=precio,
                     categoria=request.POST.get('categoria', '').strip(),
-                    talla=request.POST.get('talla', '').strip(),
+                    talla=next(iter(stocks_por_talla)),
                     color=request.POST.get('color', '').strip(),
                     marca=request.POST.get('marca', '').strip(),
                     imagen_url=request.POST.get('imagen_url', '').strip(),
-                    disponible=stock > 0,
+                    disponible=stock_total > 0,
                 )
                 producto.full_clean()
                 producto.save()
-                Inventario.objects.create(producto=producto, stock_actual=stock)
-                VarianteProducto.objects.create(
-                    producto=producto,
-                    talla=producto.talla,
-                    stock=stock,
-                )
+                Inventario.objects.create(producto=producto, stock_actual=stock_total)
+                VarianteProducto.objects.bulk_create([
+                    VarianteProducto(producto=producto, talla=talla, stock=stock_talla)
+                    for talla, stock_talla in stocks_por_talla.items()
+                ])
                 if producto.imagen_url:
                     ImagenProducto.objects.create(
                         producto=producto,
                         imagen_url=producto.imagen_url,
                     )
-                if stock == 0:
+                if stock_total == 0:
                     NotificacionInventario.objects.create(
                         producto=producto,
                         mensaje=f'{producto.nombre} se quedó sin unidades disponibles.',
@@ -309,6 +353,7 @@ def admin_productos_view(request):
         'filtros_pedidos': {'fecha': fecha, 'estado': estado, 'cliente': cliente},
         'stock_agotado': stock_agotado,
         'total_items': total_items,
+        'tallas_registro': TALLAS_REGISTRO,
     })
 
 

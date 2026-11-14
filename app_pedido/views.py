@@ -1,5 +1,6 @@
 import logging
 from decimal import Decimal
+import mercadopago
 
 from django.contrib import messages
 from django.conf import settings
@@ -16,14 +17,6 @@ from .notifications import (
 from .services import enviar_confirmacion_pedido
 
 logger = logging.getLogger(__name__)
-
-
-class PagoRechazado(Exception):
-    pass
-
-
-def procesar_pago_simulado(metodo_pago):
-    return settings.DEBUG and metodo_pago in dict(Pedido.METODOS_PAGO)
 
 
 def _carrito(request):
@@ -44,6 +37,7 @@ def resumen_pedido_carrito(request):
 def checkout_view(request):
     if not request.user.is_authenticated:
         return redirect('login')
+    
     carrito = _carrito(request)
     if not carrito:
         messages.error(request, 'Tu carrito está vacío.')
@@ -52,21 +46,17 @@ def checkout_view(request):
     error_pago = None
     error_direccion = False
     error_metodo_pago = False
+
     if request.method == 'POST':
         direccion = request.POST.get('direccion', '').strip()
         metodo_pago = request.POST.get('metodo_pago', '')
         valid_methods = dict(Pedido.METODOS_PAGO)
+        
         error_direccion = not direccion
         error_metodo_pago = metodo_pago not in valid_methods
+        
         if error_direccion or error_metodo_pago:
             error_pago = 'Completa la dirección y selecciona un medio de pago válido.'
-        elif metodo_pago == 'TARJETA':
-            from .views_checkout import crear_checkout_stripe
-
-            stripe_redirect, stripe_error = crear_checkout_stripe(request, direccion)
-            if stripe_redirect:
-                return stripe_redirect
-            error_pago = stripe_error
         else:
             try:
                 with transaction.atomic():
@@ -74,10 +64,12 @@ def checkout_view(request):
                     total = Decimal('0.00')
                     reservas_producto = {}
                     reservas_variante = {}
+                    
                     for item in carrito.values():
                         producto = Producto.objects.select_for_update().get(pk=item['producto_id'], disponible=True)
                         inventario = Inventario.objects.select_for_update().get(producto=producto)
                         variante_id = item.get('variante_id')
+                        
                         if variante_id:
                             variante = VarianteProducto.objects.select_for_update().filter(
                                 pk=variante_id,
@@ -88,38 +80,37 @@ def checkout_view(request):
                                 producto=producto,
                                 talla=item.get('talla') or producto.talla,
                             ).first()
+                            
                         cantidad = int(item['cantidad'])
                         stock_producto_reservado = reservas_producto.get(producto.pk, 0)
                         stock_variante_reservado = reservas_variante.get(variante.pk, 0) if variante else 0
+                        
                         if (
                             cantidad < 1
                             or inventario.stock_actual - stock_producto_reservado < cantidad
-                            or (
-                                variante
-                                and variante.stock - stock_variante_reservado < cantidad
-                            )
+                            or (variante and variante.stock - stock_variante_reservado < cantidad)
                             or (variante_id and not variante)
                         ):
                             raise ValueError('Producto no disponible.')
+                            
                         reservas_producto[producto.pk] = stock_producto_reservado + cantidad
                         if variante:
                             reservas_variante[variante.pk] = stock_variante_reservado + cantidad
+                            
                         precio = producto.precio
                         lineas.append((producto, inventario, variante, cantidad, precio))
                         total += precio * cantidad
 
-                    if not procesar_pago_simulado(metodo_pago):
-                        raise PagoRechazado
-
+                    # Crear Pedido en estado PENDIENTE
                     pedido = Pedido.objects.create(
                         cliente=request.user,
                         metodo_pago=metodo_pago,
                         total=total,
                         direccion_envio=direccion,
-                        estado='PAGADO',
+                        estado='PENDIENTE',
                     )
-                    inventarios_actualizados = {}
-                    variantes_actualizadas = {}
+                    
+                    # Crear detalles y descontar stock
                     for producto, inventario, variante, cantidad, precio in lineas:
                         DetallePedido.objects.create(
                             pedido=pedido,
@@ -129,55 +120,92 @@ def checkout_view(request):
                             precio_unitario=precio,
                         )
                         if variante:
-                            variante_guardada = variantes_actualizadas.get(variante.pk, variante)
-                            variante_guardada.stock -= cantidad
-                            variante_guardada.save(update_fields=['stock'])
-                            variantes_actualizadas[variante.pk] = variante_guardada
-                        inventario_guardado = inventarios_actualizados.get(producto.pk, inventario)
-                        inventario_guardado.stock_actual -= cantidad
-                        inventario_guardado.save(update_fields=['stock_actual', 'actualizado_en'])
-                        inventarios_actualizados[producto.pk] = inventario_guardado
+                            variante.stock -= cantidad
+                            variante.save(update_fields=['stock'])
+                            
+                        inventario.stock_actual -= cantidad
+                        inventario.save(update_fields=['stock_actual', 'actualizado_en'])
+                        
                         MovimientoInventario.objects.create(
                             producto=producto,
                             tipo='VENTA',
                             cantidad=cantidad,
-                            stock_resultante=inventario_guardado.stock_actual,
+                            stock_resultante=inventario.stock_actual,
                         )
-                        if inventario_guardado.stock_actual == 0:
+                        if inventario.stock_actual == 0:
                             producto.disponible = False
                             producto.save(update_fields=['disponible'])
                             NotificacionInventario.objects.create(
                                 producto=producto,
                                 mensaje=f'{producto.nombre} se quedó sin unidades disponibles.',
                             )
-            except PagoRechazado:
-                error_pago = 'Pago rechazado'
+
+                # Si eligió Mercado Pago -> generar preferencia real y redirigir
+                if metodo_pago == 'MERCADOPAGO':
+                    sdk = mercadopago.SDK(settings.MERCADOPAGO_ACCESS_TOKEN)
+                    
+                    preference_data = {
+                        "items": [
+                            {
+                                "title": f"Pedido MH'ELEGANZA #{pedido.id}",
+                                "quantity": 1,
+                                "unit_price": float(pedido.total),
+                                "currency_id": "COP"
+                            }
+                        ],
+                        "payer": {
+                            "email": request.user.email,
+                            "name": request.user.first_name or request.user.username
+                        },
+                        "back_urls": {
+                            "success": f"https://mheleganza.pythonanywhere.com/pedido/mercadopago/exitoso/{pedido.id}/",
+                            "failure": f"https://mheleganza.pythonanywhere.com/pedido/mercadopago/fallido/{pedido.id}/",
+                            "pending": f"https://mheleganza.pythonanywhere.com/pedido/mercadopago/pendiente/{pedido.id}/"
+                        },
+                        "auto_return": "approved",
+                        "external_reference": str(pedido.id),
+                    }
+                    
+                    preference_response = sdk.preference().create(preference_data)
+                    preference = preference_response.get("response", {})
+                    init_point = preference.get("init_point")
+                    preference_id = preference.get("id")
+                    
+                    if init_point:
+                        pedido.mercadopago_preference_id = preference_id
+                        pedido.save(update_fields=['mercadopago_preference_id'])
+                        
+                        request.session['carrito'] = {}
+                        request.session.modified = True
+                        
+                        return redirect(init_point)
+                    else:
+                        logger.error(f"Error respuesta Mercado Pago: {preference_response}")
+                        error_pago = 'No se pudo conectar con Mercado Pago. Intenta nuevamente.'
+                else:
+                    # Métodos manuales (Transferencia / Contraentrega)
+                    request.session['carrito'] = {}
+                    request.session.modified = True
+                    enviar_alerta_nuevo_pedido(pedido.pk)
+                    if request.user.email:
+                        try:
+                            enviar_confirmacion_pedido(pedido.pk)
+                        except Exception:
+                            logger.exception('Error enviando correo de confirmación')
+                    messages.success(request, f'Pedido #{pedido.pk} generado. Estado: {pedido.get_estado_display()}.')
+                    return redirect('mis_pedidos')
+
             except (Producto.DoesNotExist, Inventario.DoesNotExist, ValueError):
-                error_pago = 'Producto no disponible'
-            else:
-                request.session['carrito'] = {}
-                enviar_alerta_nuevo_pedido(pedido.pk)
-                email_enviado = 0
-                if request.user.email:
-                    try:
-                        email_enviado = enviar_confirmacion_pedido(pedido.pk)
-                    except (OSError, ValueError, RuntimeError):
-                        logger.exception('Could not send order confirmation')
-                mensaje = f'Pedido #{pedido.pk} generado. Estado: {pedido.get_estado_display}.'
-                if email_enviado:
-                    mensaje += ' Confirmación enviada a tu correo.'
-                messages.success(request, mensaje)
-                return redirect('mis_pedidos')
+                error_pago = 'Uno o más productos ya no tienen stock disponible.'
+            except DatabaseError:
+                error_pago = 'Error al procesar el pedido en la base de datos.'
 
     total_items, subtotal = _resumen(carrito)
     lineas_carrito = [
-        {
-            **item,
-            'subtotal': Decimal(str(item['precio'])) * item['cantidad'],
-        }
+        {**item, 'subtotal': Decimal(str(item['precio'])) * item['cantidad']}
         for item in carrito.values()
     ]
-    return render(request, 'app_pedido/checkout.html', {
+    return render(request, 'app_pedido/Checkout.html', {
         'carrito': carrito,
         'lineas_carrito': lineas_carrito,
         'subtotal': subtotal,
@@ -186,8 +214,41 @@ def checkout_view(request):
         'error_direccion': error_direccion,
         'error_metodo_pago': error_metodo_pago,
         'direccion_actual': request.POST.get('direccion', request.session.get('direccion_usuario', '')),
-        'metodo_pago_actual': request.POST.get('metodo_pago', ''),
+        'metodo_pago_actual': request.POST.get('metodo_pago', 'MERCADOPAGO'),
     })
+
+
+def pago_mercadopago_exitoso(request, pedido_id):
+    pedido = get_object_or_404(Pedido, pk=pedido_id, cliente=request.user)
+    payment_id = request.GET.get('payment_id')
+    status = request.GET.get('status')
+    
+    if pedido.estado == 'PENDIENTE' and status == 'approved':
+        pedido.estado = 'PAGADO'
+        pedido.mercadopago_payment_id = payment_id
+        pedido.save(update_fields=['estado', 'mercadopago_payment_id'])
+        enviar_alerta_nuevo_pedido(pedido.pk)
+        if request.user.email:
+            try:
+                enviar_confirmacion_pedido(pedido.pk)
+            except Exception:
+                logger.exception("Error enviando correo de confirmación.")
+            
+    return render(request, 'app_pedido/Payment_success.html', {'pedido': pedido})
+
+
+def pago_mercadopago_fallido(request, pedido_id):
+    pedido = get_object_or_404(Pedido, pk=pedido_id, cliente=request.user)
+    if pedido.estado == 'PENDIENTE':
+        pedido.estado = 'RECHAZADO'
+        pedido.save(update_fields=['estado'])
+    return render(request, 'app_pedido/payment_cancel.html', {'pedido': pedido})
+
+
+def pago_mercadopago_pendiente(request, pedido_id):
+    pedido = get_object_or_404(Pedido, pk=pedido_id, cliente=request.user)
+    # Tu plantilla Payment_success.html ya tiene el bloque {% else %} para estado PENDIENTE
+    return render(request, 'app_pedido/Payment_success.html', {'pedido': pedido})
 
 
 def mis_pedidos_view(request):

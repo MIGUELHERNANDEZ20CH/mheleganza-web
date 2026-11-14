@@ -12,8 +12,6 @@ class Pedido(models.Model):
     ]
 
     METODOS_PAGO = [
-        ('TARJETA', 'Tarjeta de Crédito/Débito'),
-        ('EFECTIVO', 'Efectivo'),
         ('TRANSFERENCIA', 'Transferencia Bancaria'),
         ('CONTRAENTREGA', 'Pago Contraentrega'),
     ]

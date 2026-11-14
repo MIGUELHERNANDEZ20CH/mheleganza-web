@@ -31,8 +31,7 @@
                         <label class="form-label fw-semibold small">Seleccione Medio de Pago</label>
                         <select id="metodo_pago" name="metodo_pago" class="form-select rounded-pill px-3 py-2{% if error_metodo_pago %} is-invalid{% endif %}" required aria-invalid="{% if error_metodo_pago %}true{% else %}false{% endif %}">
                             <option value="" {% if not metodo_pago_actual %}selected{% endif %}>Seleccione una opción...</option>
-                            <option value="TARJETA" {% if metodo_pago_actual == 'TARJETA' %}selected{% endif %}>Tarjeta de Crédito o Débito (Stripe Checkout)</option>
-                            <option value="EFECTIVO" {% if metodo_pago_actual == 'EFECTIVO' %}selected{% endif %}>Efectivo</option>
+                            <option value="MERCADOPAGO" {% if metodo_pago_actual == 'MERCADOPAGO' or not metodo_pago_actual %}selected{% endif %}>Mercado Pago (PSE, Tarjetas de Crédito/Débito, Efecty)</option>
                             <option value="TRANSFERENCIA" {% if metodo_pago_actual == 'TRANSFERENCIA' %}selected{% endif %}>Transferencia Bancaria</option>
                             <option value="CONTRAENTREGA" {% if metodo_pago_actual == 'CONTRAENTREGA' %}selected{% endif %}>Pago Contraentrega</option>
                         </select>

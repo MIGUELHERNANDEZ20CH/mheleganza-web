@@ -8,7 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <!-- Google Fonts: editorial serif, bold headlines and clean body text -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -118,11 +118,108 @@
             color: var(--gold-light);
         }
 
-        /* Tarjetas con acabado sutil */
+        /* Menú Desplegable de Perfil (HTML & CSS Puro) */
+        .user-menu-details {
+            position: relative;
+        }
+
+        .user-menu-summary {
+            list-style: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 12px 4px 6px;
+            border: 1px solid var(--border-lux);
+            border-radius: 50px;
+            background-color: rgba(18, 18, 18, 0.9);
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .user-menu-summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .user-menu-summary:hover,
+        .user-menu-details[open] .user-menu-summary {
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 12px rgba(197, 160, 89, 0.25);
+        }
+
+        .user-avatar-img {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1.5px solid var(--gold-primary);
+        }
+
+        .user-avatar-fallback {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            color: #080808;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-dropdown-panel {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 12px);
+            min-width: 250px;
+            background-color: var(--surface-lux);
+            border: 1px solid var(--gold-primary);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.85);
+            z-index: 1050;
+            padding: 0.5rem 0;
+        }
+
+        .user-dropdown-header {
+            padding: 0.6rem 1.2rem;
+            border-bottom: 1px solid var(--border-lux);
+            margin-bottom: 0.3rem;
+        }
+
+        .user-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 0.6rem 1.2rem;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: transparent;
+            border: none;
+            text-align: left;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .user-dropdown-item:hover {
+            background-color: rgba(197, 160, 89, 0.15);
+            color: var(--gold-light);
+        }
+
+        .user-dropdown-divider {
+            height: 1px;
+            background-color: var(--border-lux);
+            margin: 0.4rem 0;
+        }
+
+        /* Tarjetas y Secciones */
         .card-lux {
             background-color: var(--surface-card);
             border: 1px solid var(--border-lux);
-            border-radius: 0px; /* Bordes rectos minimalistas tipo alta costura */
+            border-radius: 0px;
             transition: transform 0.3s ease, border-color 0.3s ease;
         }
 
@@ -131,7 +228,6 @@
             transform: translateY(-3px);
         }
 
-        /* Footer refinado */
         footer {
             background-color: var(--surface-lux);
             border-top: 1px solid var(--border-lux);
@@ -147,18 +243,9 @@
             color: #fff;
         }
 
-        .cart-page h1,
-        .cart-page h2,
-        .cart-page h3,
-        .cart-page h4,
-        .profile-page h1,
-        .profile-page h2,
-        .profile-page h3,
-        .profile-page h4,
-        .orders-page h1,
-        .orders-page h2,
-        .orders-page h3,
-        .orders-page h4 {
+        .cart-page h1, .cart-page h2, .cart-page h3, .cart-page h4,
+        .profile-page h1, .profile-page h2, .profile-page h3, .profile-page h4,
+        .orders-page h1, .orders-page h2, .orders-page h3, .orders-page h4 {
             color: var(--gold-heading);
         }
 
@@ -171,14 +258,7 @@
             color: #fff;
         }
 
-        .cart-page .table {
-            --bs-table-bg: #1e1e1e;
-            --bs-table-color: #fff;
-            --bs-table-border-color: rgb(229 193 88 / 18%);
-            color: #fff;
-        }
-
-        .orders-page .table {
+        .cart-page .table, .orders-page .table {
             --bs-table-bg: #1e1e1e;
             --bs-table-color: #fff;
             --bs-table-border-color: rgb(229 193 88 / 18%);
@@ -190,88 +270,63 @@
             --bs-table-color: var(--gold-heading);
         }
 
-        .orders-page .bg-white,
-        .orders-page .bg-light {
+        .orders-page .bg-white, .orders-page .bg-light {
             background-color: #1e1e1e !important;
             color: #fff !important;
         }
 
-        .cart-page .table thead th,
-        .orders-page .table thead th,
-        .cart-page .form-label,
-        .profile-page .form-label {
+        .cart-page .table thead th, .orders-page .table thead th,
+        .cart-page .form-label, .profile-page .form-label {
             color: var(--gold-heading);
         }
 
-        .cart-page .card-mh .text-muted,
-        .profile-page .card-mh .text-muted,
-        .profile-page .card .text-muted {
+        .cart-page .card-mh .text-muted, .profile-page .card-mh .text-muted, .profile-page .card .text-muted {
             color: #c5c5c5 !important;
         }
 
-        .cart-page .text-white,
-        .profile-page .text-white,
-        .orders-page .text-white {
+        .cart-page .text-white, .profile-page .text-white, .orders-page .text-white {
             color: #fff !important;
         }
 
-        .cart-page .text-warning,
-        .profile-page .text-warning,
-        .orders-page .text-warning {
+        .cart-page .text-warning, .profile-page .text-warning, .orders-page .text-warning {
             color: var(--gold-heading) !important;
         }
 
-        .cart-page .btn-dorado,
-        .profile-page .btn-dorado,
-        .profile-page .btn-dark,
-        .orders-page .btn-dark {
+        .cart-page .btn-dorado, .profile-page .btn-dorado, .profile-page .btn-dark, .orders-page .btn-dark {
             border: 1px solid var(--gold-contrast);
             background-color: var(--gold-contrast);
             color: #17140a;
             font-weight: 700;
         }
 
-        .cart-page .btn-dorado:hover,
-        .profile-page .btn-dorado:hover,
-        .profile-page .btn-dark:hover,
-        .orders-page .btn-dark:hover {
+        .cart-page .btn-dorado:hover, .profile-page .btn-dorado:hover, .profile-page .btn-dark:hover, .orders-page .btn-dark:hover {
             border-color: var(--gold-heading);
             background-color: var(--gold-heading);
             color: #111;
         }
 
-        .orders-page .text-dark {
-            color: #fff !important;
-        }
-
-        .orders-page .text-secondary {
-            color: #c5c5c5 !important;
-        }
-
+        .orders-page .text-dark { color: #fff !important; }
+        .orders-page .text-secondary { color: #c5c5c5 !important; }
         .orders-page .btn-outline-dark {
             border-color: var(--gold-contrast);
             color: var(--gold-heading);
         }
-
         .orders-page .btn-outline-dark:hover {
             background-color: var(--gold-contrast);
             color: #17140a;
         }
 
-        .profile-page .form-control,
-        .profile-page .form-select {
+        .profile-page .form-control, .profile-page .form-select {
             border: 1px solid #5b5542;
             background-color: #181818;
             color: #fff;
         }
 
-        .profile-page .form-control::placeholder,
-        .profile-page .form-select::placeholder {
+        .profile-page .form-control::placeholder, .profile-page .form-select::placeholder {
             color: #b8b8b8;
         }
 
-        .profile-page .form-control:focus,
-        .profile-page .form-select:focus {
+        .profile-page .form-control:focus, .profile-page .form-select:focus {
             border-color: var(--gold-contrast);
             background-color: #181818;
             box-shadow: 0 0 0 0.2rem rgb(212 175 55 / 22%);
@@ -285,13 +340,8 @@
             box-shadow: 0 0 0 1000px #181818 inset;
         }
 
-        .profile-page .card-mh > div > label {
-            color: var(--gold-heading) !important;
-        }
-
-        .profile-page .text-secondary {
-            color: #d0d0d0 !important;
-        }
+        .profile-page .card-mh > div > label { color: var(--gold-heading) !important; }
+        .profile-page .text-secondary { color: #d0d0d0 !important; }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -299,10 +349,15 @@
 
     <div class="announcement-bar">MH’ELEGANZA &nbsp;·&nbsp; Distinción con propósito</div>
 
-    <!-- Barra de Navegación Estilo Boutiques Italianas -->
+    <!-- Barra de Navegación -->
     <nav class="navbar navbar-expand-lg navbar-dark navbar-lux sticky-top shadow-sm">
         <div class="container">
-            <a class="navbar-brand fs-3 brand-title" href="{% url 'catalogo' %}">MH’ELEGANZA</a>
+            <!-- Logo redirige al catálogo si es cliente, o a admin si es administrador -->
+            {% if request.session.usuario.rol == 'admin' %}
+                <a class="navbar-brand fs-3 brand-title" href="{% url 'admin_productos' %}">MH’ELEGANZA</a>
+            {% else %}
+                <a class="navbar-brand fs-3 brand-title" href="{% url 'catalogo' %}">MH’ELEGANZA</a>
+            {% endif %}
             
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -310,51 +365,170 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center gap-3">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'catalogo' %}">Colección</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-warning" href="{% url 'ver_favoritos' %}">favoritos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'mis_pedidos' %}">Pedidos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'perfil_datos' %}">Cuenta</a>
-                    </li>
+                    
                     {% if request.session.usuario.rol == 'admin' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'admin_productos' %}">Administración</a>
-                    </li>
-                    {% endif %}
+                        <!-- VISTA EXCLUSIVA PARA EL ADMINISTRADOR (Sin colección ni carrito arriba) -->
+                        <li class="nav-item ms-lg-1">
+                            <details class="user-menu-details">
+                                <summary class="user-menu-summary">
+                                    {% if request.session.usuario.foto %}
+                                        <img src="{{ request.session.usuario.foto }}" alt="Admin" class="user-avatar-img">
+                                    {% elif request.session.usuario.picture %}
+                                        <img src="{{ request.session.usuario.picture }}" alt="Admin" class="user-avatar-img">
+                                    {% elif request.session.usuario.avatar %}
+                                        <img src="{{ request.session.usuario.avatar }}" alt="Admin" class="user-avatar-img">
+                                    {% else %}
+                                        <div class="user-avatar-fallback">
+                                            {{ request.session.usuario.nombre|default:"A"|slice:":1"|upper }}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <span class="small text-uppercase fw-semibold" style="color: var(--gold-light); letter-spacing: 0.8px;">
+                                        Administrador
+                                    </span>
+                                    <i class="bi bi-chevron-down small" style="color: var(--gold-primary);"></i>
+                                </summary>
 
-                    <!-- BLOQUE DINÁMICO DE SESIÓN -->
-                    {% if request.session.usuario %}
-                        <li class="nav-item">
-                            <form method="POST" action="{% url 'cerrar_sesion' %}">{% csrf_token %}<button type="submit" class="nav-link text-danger fw-semibold border-0 bg-transparent">Cerrar sesión</button></form>
+                                <!-- Panel desplegable del Administrador -->
+                                <div class="user-dropdown-panel">
+                                    <div class="user-dropdown-header">
+                                        <div class="small fw-bold text-uppercase" style="color: var(--gold-primary);">
+                                            {{ request.session.usuario.nombre|default:"Administrador" }}
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.72rem; word-break: break-all;">
+                                            {% if request.session.usuario.email %}
+                                                {{ request.session.usuario.email }}
+                                            {% elif request.session.usuario.correo %}
+                                                {{ request.session.usuario.correo }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <a href="{% url 'perfil_datos' %}" class="user-dropdown-item">
+                                        <i class="bi bi-person" style="color: var(--gold-primary);"></i> Mi Cuenta
+                                    </a>
+                                    <a href="{% url 'admin_productos' %}" class="user-dropdown-item">
+                                        <i class="bi bi-plus-circle" style="color: var(--gold-primary);"></i> Ingresar Productos
+                                    </a>
+                                    <a href="{% url 'admin_productos' %}" class="user-dropdown-item">
+                                        <i class="bi bi-boxes" style="color: var(--gold-primary);"></i> Control de Inventario y Productos
+                                    </a>
+                                    <a href="{% url 'admin_productos' %}" class="user-dropdown-item">
+                                        <i class="bi bi-clipboard-check" style="color: var(--gold-primary);"></i> Control y Estado de Pedidos
+                                    </a>
+
+                                    <div class="user-dropdown-divider"></div>
+
+                                    <form method="POST" action="{% url 'cerrar_sesion' %}" class="m-0">
+                                        {% csrf_token %}
+                                        <button type="submit" class="user-dropdown-item text-danger fw-semibold">
+                                            <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+                                        </button>
+                                    </form>
+                                </div>
+                            </details>
                         </li>
+
+                    {% elif request.session.usuario %}
+                        <!-- VISTA PARA CLIENTE LOGUEADO -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'catalogo' %}">Colección</a>
+                        </li>
+
+                        <!-- Carrito -->
+                        <li class="nav-item">
+                            <a href="{% url 'ver_carrito' %}" class="btn btn-outline-lux position-relative btn-sm px-3 py-2">
+                                <i class="bi bi-bag me-1"></i> Carrito
+                                {% if total_items > 0 %}
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color: var(--gold-primary); color: #000; font-weight: 700;">
+                                        {{ total_items }}
+                                    </span>
+                                {% endif %}
+                            </a>
+                        </li>
+
+                        <!-- Panel de Cliente -->
+                        <li class="nav-item ms-lg-1">
+                            <details class="user-menu-details">
+                                <summary class="user-menu-summary">
+                                    {% if request.session.usuario.foto %}
+                                        <img src="{{ request.session.usuario.foto }}" alt="Perfil" class="user-avatar-img">
+                                    {% elif request.session.usuario.picture %}
+                                        <img src="{{ request.session.usuario.picture }}" alt="Perfil" class="user-avatar-img">
+                                    {% elif request.session.usuario.avatar %}
+                                        <img src="{{ request.session.usuario.avatar }}" alt="Perfil" class="user-avatar-img">
+                                    {% else %}
+                                        <div class="user-avatar-fallback">
+                                            {{ request.session.usuario.nombre|default:"U"|slice:":1"|upper }}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <span class="small text-uppercase fw-semibold" style="color: var(--gold-light); letter-spacing: 0.8px;">
+                                        {{ request.session.usuario.nombre|default:"Mi Perfil"|truncatewords:1 }}
+                                    </span>
+                                    <i class="bi bi-chevron-down small" style="color: var(--gold-primary);"></i>
+                                </summary>
+
+                                <div class="user-dropdown-panel">
+                                    <div class="user-dropdown-header">
+                                        <div class="small fw-bold text-uppercase" style="color: var(--gold-primary);">
+                                            {{ request.session.usuario.nombre|default:"Usuario" }}
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.72rem; word-break: break-all;">
+                                            {% if request.session.usuario.email %}
+                                                {{ request.session.usuario.email }}
+                                            {% elif request.session.usuario.correo %}
+                                                {{ request.session.usuario.correo }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <a href="{% url 'perfil_datos' %}" class="user-dropdown-item">
+                                        <i class="bi bi-person" style="color: var(--gold-primary);"></i> Mi Cuenta
+                                    </a>
+                                    <a href="{% url 'ver_favoritos' %}" class="user-dropdown-item">
+                                        <i class="bi bi-heart" style="color: var(--gold-primary);"></i> Favoritos
+                                    </a>
+                                    <a href="{% url 'mis_pedidos' %}" class="user-dropdown-item">
+                                        <i class="bi bi-box-seam" style="color: var(--gold-primary);"></i> Mis Pedidos
+                                    </a>
+
+                                    <div class="user-dropdown-divider"></div>
+
+                                    <form method="POST" action="{% url 'cerrar_sesion' %}" class="m-0">
+                                        {% csrf_token %}
+                                        <button type="submit" class="user-dropdown-item text-danger fw-semibold">
+                                            <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+                                        </button>
+                                    </form>
+                                </div>
+                            </details>
+                        </li>
+
                     {% else %}
+                        <!-- VISTA PARA VISITANTES -->
                         <li class="nav-item">
-                            <a class="nav-link text-light" href="{% url 'login' %}">Acceso</a>
+                            <a class="nav-link" href="{% url 'catalogo' %}">Colección</a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="{% url 'ver_carrito' %}" class="btn btn-outline-lux position-relative btn-sm px-3 py-2">
+                                <i class="bi bi-bag me-1"></i> Carrito
+                                {% if total_items > 0 %}
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color: var(--gold-primary); color: #000; font-weight: 700;">
+                                        {{ total_items }}
+                                    </span>
+                                {% endif %}
+                            </a>
+                        </li>
+
+                        <li class="nav-item ms-lg-2">
+                            <a class="btn btn-lux-gold btn-sm" href="{% url 'login' %}">
+                                <i class="bi bi-person-circle me-1"></i> Iniciar Sesión
+                            </a>
                         </li>
                     {% endif %}
-                    <!-- FIN BLOQUE DINÁMICO -->
 
-                    <li class="nav-item ms-lg-2">
-                        <a href="{% url 'ver_carrito' %}" class="btn btn-outline-lux position-relative btn-sm px-3 py-2">
-                            <i class="bi bi-bag me-1"></i> Carrito
-                            {% if total_items > 0 %}
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color: var(--gold-primary); color: #000; font-weight: 700;">
-                                    {{ total_items }}
-                                </span>
-                            {% endif %} 
-                            {% if total_items > 0 %}
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color: var(--gold-primary); color: #000; font-weight: 700;">
-                                    {{ total_items }}
-                                </span>
-                            {% endif %}
-                        </a>
-                    </li>
                 </ul>
             </div>
         </div>
@@ -375,7 +549,7 @@
         </div>
     </footer>
 
-    <!-- Bootstrap 5 JS Bundle -->
+    <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

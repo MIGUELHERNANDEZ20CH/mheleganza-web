@@ -257,3 +257,8 @@ if env_bool('DJANGO_USE_X_FORWARDED_PROTO'):
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 ACCOUNT_LOGIN_TEMPLATE = 'app_usuarios/login.html'
+
+# ==========================================
+# CONFIGURACIÓN DE MERCADO PAGO COLOMBIA
+# ==========================================
+MERCADOPAGO_ACCESS_TOKEN = os.getenv('MERCADOPAGO_ACCESS_TOKEN', 'APP_USR-tu-token-real-de-produccion-aqui')

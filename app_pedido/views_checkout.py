@@ -1,13 +1,9 @@
 import logging
 from decimal import Decimal
 
-import stripe
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
-from django.views.decorators.http import require_GET
 
 from app_inventario.models import Inventario
 from app_productos.models import Producto, VarianteProducto
@@ -16,23 +12,9 @@ from .models import DetallePedido, Pedido
 
 logger = logging.getLogger(__name__)
 
-ZERO_DECIMAL_CURRENCIES = {
-    'bif', 'clp', 'djf', 'gnf', 'jpy', 'kmf', 'krw', 'mga', 'pyg',
-    'rwf', 'ugx', 'vnd', 'vuv', 'xaf', 'xof', 'xpf',
-}
-
 
 class CheckoutValidationError(ValueError):
     pass
-
-
-def _stripe_amount(price, currency):
-    exponent = 0 if currency in ZERO_DECIMAL_CURRENCIES else 2
-    multiplier = Decimal(10) ** exponent
-    amount = Decimal(price) * multiplier
-    if amount != amount.to_integral_value() or amount <= 0:
-        raise CheckoutValidationError('El precio del producto no es válido para Stripe.')
-    return int(amount)
 
 
 def _validated_cart_lines(cart):
@@ -55,12 +37,12 @@ def _validated_cart_lines(cart):
 
 
 @login_required(login_url='login')
-def crear_checkout_stripe(request, direccion):
-    if not settings.STRIPE_SECRET_KEY:
-        return None, 'El pago con tarjeta no está disponible en este momento.'
-
+def crear_pedido_interno(request, direccion):
+    """
+    Procesa el checkout de forma interna (por ejemplo, pago contraentrega o transferencia manual),
+    validando stock de manera atómica y creando el pedido.
+    """
     cart = request.session.get('carrito', {})
-    currency = settings.STRIPE_CURRENCY.lower()
     try:
         parsed_lines = _validated_cart_lines(cart)
         with transaction.atomic():
@@ -106,24 +88,16 @@ def crear_checkout_stripe(request, direccion):
                 lines.append((producto, variante, quantity, producto.precio))
 
             total = sum((price * quantity for _, _, quantity, price in lines), Decimal('0.00'))
-            line_items = [
-                {
-                    'price_data': {
-                        'currency': currency,
-                        'product_data': {'name': producto.nombre[:250]},
-                        'unit_amount': _stripe_amount(price, currency),
-                    },
-                    'quantity': quantity,
-                }
-                for producto, _, quantity, price in lines
-            ]
+            
+            # Crear el pedido de forma interna
             pedido = Pedido.objects.create(
                 cliente=request.user,
-                metodo_pago='TARJETA',
+                metodo_pago='CONTRAENTREGA',
                 total=total,
                 direccion_envio=direccion,
                 estado='PENDIENTE',
             )
+            
             for producto, variante, quantity, price in lines:
                 DetallePedido.objects.create(
                     pedido=pedido,
@@ -132,58 +106,27 @@ def crear_checkout_stripe(request, direccion):
                     cantidad=quantity,
                     precio_unitario=price,
                 )
+                
+                # Opcional: Descontar stock inmediatamente del inventario
+                inventario_obj = Inventario.objects.get(producto=producto)
+                inventario_obj.stock_actual -= quantity
+                inventario_obj.save()
 
     except CheckoutValidationError as error:
         return None, str(error)
 
-    stripe.api_key = settings.STRIPE_SECRET_KEY
-    try:
-        checkout_session = stripe.checkout.Session.create(
-            mode='payment',
-            payment_method_types=['card'],
-            line_items=line_items,
-            customer_email=request.user.email or None,
-            client_reference_id=str(pedido.pk),
-            metadata={'pedido_id': str(pedido.pk)},
-            success_url=(
-                request.build_absolute_uri(reverse('payment_success'))
-                + '?session_id={CHECKOUT_SESSION_ID}'
-            ),
-            cancel_url=(
-                request.build_absolute_uri(reverse('payment_cancel'))
-                + f'?order_id={pedido.pk}'
-            ),
-            api_key=settings.STRIPE_SECRET_KEY,
-            idempotency_key=f'mheleganza-checkout-{pedido.pk}',
-        )
-        if not checkout_session.url:
-            raise stripe.StripeError('Stripe did not return a Checkout URL.')
-        Pedido.objects.filter(pk=pedido.pk).update(
-            stripe_checkout_session_id=checkout_session.id,
-        )
-    except stripe.StripeError:
-        logger.exception('Stripe Checkout session creation failed for order %s', pedido.pk)
-        return None, 'No fue posible iniciar el pago. Inténtalo nuevamente.'
+    # Limpiar el carrito de la sesión tras crear el pedido con éxito
+    request.session['carrito'] = {}
+    request.session.modified = True
 
-    return redirect(checkout_session.url), None
+    return redirect('pedido_exitoso', pedido_id=pedido.pk), None
 
 
 @login_required(login_url='login')
-@require_GET
-def payment_success(request):
-    session_id = request.GET.get('session_id', '').strip()
+def pedido_exitoso(request, pedido_id):
     pedido = get_object_or_404(
         Pedido.objects.prefetch_related('items__producto'),
-        stripe_checkout_session_id=session_id,
+        pk=pedido_id,
         cliente=request.user,
     )
-    if pedido.estado == 'PAGADO':
-        request.session['carrito'] = {}
-        request.session.modified = True
     return render(request, 'app_pedido/payment_success.html', {'pedido': pedido})
-
-
-@login_required(login_url='login')
-@require_GET
-def payment_cancel(request):
-    return render(request, 'app_pedido/payment_cancel.html')

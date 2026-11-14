@@ -53,6 +53,23 @@ class CatalogoYProductosTests(TestCase):
 		self.assertNotContains(response, 'Chaqueta negra')
 		self.assertContains(response, 'Filtrar')
 
+	def test_filtro_y_catalogo_incluyen_tallas_de_variantes_publicadas(self):
+		variante_m = VarianteProducto.objects.create(
+			producto=self.producto, talla='M', stock=2,
+		)
+		variante_l = VarianteProducto.objects.create(
+			producto=self.producto, talla='L', stock=3,
+		)
+		Inventario.objects.filter(producto=self.producto).update(stock_actual=5)
+
+		response = self.client.get(reverse('catalogo'), {'talla': 'L'})
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual([producto['nombre'] for producto in response.context['productos']], ['Camisa azul'])
+		self.assertContains(response, 'Tallas L, M')
+		self.assertContains(response, f'value="{variante_m.pk}"')
+		self.assertContains(response, f'value="{variante_l.pk}"')
+
 	def test_quitar_favorito_solo_elimina_con_post(self):
 		session = self.client.session
 		session['favoritos'] = [self.producto.pk]
@@ -178,6 +195,34 @@ class CatalogoYProductosTests(TestCase):
 		producto = Producto.objects.get(nombre='Producto agotado')
 		self.assertFalse(producto.disponible)
 		self.assertTrue(NotificacionInventario.objects.filter(producto=producto).exists())
+
+	def test_admin_registra_varias_tallas_con_stock_independiente(self):
+		session = self.client.session
+		session['usuario'] = {'rol': 'admin'}
+		session.save()
+
+		response = self.client.post(reverse('admin_productos'), {
+			'agregar_producto': '1',
+			'nombre': 'Camisa varias tallas',
+			'descripcion': 'Descripción',
+			'precio': '25.00',
+			'categoria': 'Camisas',
+			'stock_S': '3',
+			'stock_M': '0',
+			'stock_L': '',
+			'color': 'Negro',
+			'marca': 'MH',
+			'imagen_url': '',
+		})
+
+		self.assertRedirects(response, reverse('admin_productos'))
+		producto = Producto.objects.get(nombre='Camisa varias tallas')
+		self.assertEqual(
+			dict(producto.variantes.values_list('talla', 'stock')),
+			{'S': 3, 'M': 0},
+		)
+		self.assertEqual(producto.inventario.stock_actual, 3)
+		self.assertTrue(producto.disponible)
 
 	def test_admin_actualiza_stock_de_variante_y_total_inventariado(self):
 		variante_m = VarianteProducto.objects.create(

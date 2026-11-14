@@ -451,6 +451,18 @@
         transition: all 0.3s ease;
     }
 
+    .shop__quick-select {
+        width: 100%;
+        min-height: 2.5rem;
+        margin-bottom: 0.4rem;
+        padding: 0.4rem 0.8rem;
+        border: 1px solid rgb(212 175 55 / 65%);
+        border-radius: 0.6rem;
+        background: rgb(8 11 16 / 92%);
+        color: #f2d56f;
+        font-size: 0.75rem;
+    }
+
     .shop__quick-button:hover:not(:disabled) {
         background: linear-gradient(115deg, #e4c65a, var(--shop-gold));
         color: #111;
@@ -811,6 +823,15 @@
                         <span class="shop__badge">DISTINCIÓN MH</span>
                         <form method="POST" action="{% url 'agregar_carrito' producto.id %}" class="shop__quick-add">
                             {% csrf_token %}
+                            {% if producto.variantes %}
+                                <label class="visually-hidden" for="quick-size-{{ producto.id }}">Selecciona una talla para {{ producto.nombre }}</label>
+                                <select id="quick-size-{{ producto.id }}" name="variante_id" class="shop__quick-select" required>
+                                    <option value="">Selecciona una talla</option>
+                                    {% for variante in producto.tallas_disponibles %}
+                                        <option value="{{ variante.id }}">{{ variante.talla }} ({{ variante.stock }} disp.)</option>
+                                    {% endfor %}
+                                </select>
+                            {% endif %}
                             <button type="submit" class="shop__quick-button" {% if not producto.disponible %}disabled{% endif %}>Agregar al carrito</button>
                         </form>
                     </div>
@@ -819,7 +840,7 @@
                         <h3 class="shop__product-name">{{ producto.nombre }}</h3>
                         <p class="shop__description">{{ producto.descripcion }}</p>
                         <div class="shop__details">
-                            <span class="shop__detail">Talla {{ producto.talla }}</span>
+                            <span class="shop__detail">Tallas {{ producto.tallas|join:", " }}</span>
                             <span class="shop__detail">{{ producto.color }}</span>
                         </div>
                         <div class="shop__card-bottom">

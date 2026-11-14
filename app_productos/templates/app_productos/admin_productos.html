@@ -51,6 +51,10 @@
         color: #f5f3ee;
     }
 
+    .admin-products-page .size-stock-input {
+        max-width: 7rem;
+    }
+
     .admin-products-page textarea.form-control {
         min-height: 5rem;
     }
@@ -226,16 +230,20 @@
                         <input type="number" name="precio" class="form-control form-control-sm rounded-pill" required>
                     </div>
                     <div class="mb-2">
-                        <label class="form-label small fw-semibold">Stock Inicial (HU-15)</label>
-                        <input type="number" name="stock" class="form-control form-control-sm rounded-pill" value="10" required>
-                    </div>
-                    <div class="mb-2">
                         <label class="form-label small fw-semibold">Categoría</label>
                         <input type="text" name="categoria" class="form-control form-control-sm rounded-pill" placeholder="Camisas/Chaquetas" required>
                     </div>
-                    <div class="mb-2">
-                        <label class="form-label small fw-semibold">Talla</label>
-                        <input type="text" name="talla" class="form-control form-control-sm rounded-pill" required>
+                    <fieldset class="mb-3">
+                        <legend class="form-label small fw-semibold mb-1">Tallas y stock inicial</legend>
+                        <p class="text-muted small mb-2">Deja vacío si no ofreces esa talla. Ingresa 0 para registrarla agotada.</p>
+                        <div class="row g-2">
+                            {% for talla in tallas_registro %}
+                            <div class="col-6 d-flex align-items-center gap-2">
+                                <label for="stock-{{ forloop.counter }}" class="small">{{ talla }}</label>
+                                <input id="stock-{{ forloop.counter }}" type="number" name="stock_{{ talla }}" min="0" step="1" class="form-control form-control-sm rounded-pill size-stock-input" aria-label="Stock talla {{ talla }}">
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
                     <div class="mb-2">
                         <label class="form-label small fw-semibold">Color</label>
